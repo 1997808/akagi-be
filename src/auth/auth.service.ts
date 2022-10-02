@@ -4,10 +4,14 @@ import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
-  constructor(private usersService: UsersService, private jwtService: JwtService) {}
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService,
+  ) {}
 
   async validateUser(email: string): Promise<any> {
     const user = await this.usersService.findOneByEmail(email);
@@ -47,7 +51,7 @@ export class AuthService {
     };
   }
 
-  private async generateToken(user) {
+  private async generateToken(user: User) {
     const token = await this.jwtService.signAsync(user);
     return token;
   }

@@ -8,7 +8,11 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe());
 
-  const config = new DocumentBuilder().setTitle('Akagi API').setVersion('0.1').build();
+  const config = new DocumentBuilder()
+    .setTitle('Akagi API')
+    .setVersion('0.1')
+    .addBearerAuth(undefined, 'defaultToken')
+    .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
 
