@@ -1,26 +1,64 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { JwtService } from '@nestjs/jwt';
+import { UsersService } from '../users/users.service';
+import { LoginDto } from './dto/login.dto';
+import * as bcrypt from 'bcrypt';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  constructor(private usersService: UsersService, private jwtService: JwtService) {}
+
+  async validateUser(email: string): Promise<any> {
+    const user = await this.usersService.findOneByEmail(email);
+    if (user) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...result } = user;
+      return result;
+    }
+    return null;
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  async login(loginDto: LoginDto) {
+    const { email, password } = loginDto;
+    const user = await this.usersService.findOneByEmail(email);
+    if (!user) {
+      throw new Error(`No user found with email ${email}`);
+    }
+    if (!(await this.comparePassword(password, user.password))) {
+      throw new Error(`Password wrong`);
+    }
+    const result = await this.generateToken(user);
+    return {
+      accessToken: result,
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+  async register(registerDto: RegisterDto) {
+    const { email, password } = registerDto;
+    const existed = await this.usersService.findOneByEmail(email);
+    if (existed) {
+      throw new Error(`User found with email ${email}`);
+    }
+    registerDto.password = await this.hashPassword(password);
+    const user = await this.usersService.create(registerDto);
+    return {
+      ok: !!user,
+    };
   }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
+  private async generateToken(user) {
+    const token = await this.jwtService.signAsync(user);
+    return token;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  private async hashPassword(password: string) {
+    const hash = await bcrypt.hash(password, 10);
+    return hash;
+  }
+
+  private async comparePassword(enteredPassword: string, dbPassword: string) {
+    const match = await bcrypt.compare(enteredPassword, dbPassword);
+    return match;
   }
 }

@@ -23,6 +23,10 @@ export class UsersService {
     return await this.prisma.user.findUnique({ where: { id } });
   }
 
+  async findOneByEmail(email: string) {
+    return await this.prisma.user.findUnique({ where: { email } });
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto) {
     return await this.prisma.user.update({
       where: { id },
