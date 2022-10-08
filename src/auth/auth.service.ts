@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
@@ -27,10 +27,16 @@ export class AuthService {
     const { email, password } = loginDto;
     const user = await this.usersService.findOneByEmail(email);
     if (!user) {
-      throw new Error(`No user found with email ${email}`);
+      throw new HttpException(
+        `Email or password wrong`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
     if (!(await this.comparePassword(password, user.password))) {
-      throw new Error(`Password wrong`);
+      throw new HttpException(
+        `Email or password wrong`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
     const result = await this.generateToken(user);
     return {
@@ -42,7 +48,10 @@ export class AuthService {
     const { email, password } = registerDto;
     const existed = await this.usersService.findOneByEmail(email);
     if (existed) {
-      throw new Error(`User found with email ${email}`);
+      throw new HttpException(
+        `Email duplicate`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
     registerDto.password = await this.hashPassword(password);
     const user = await this.usersService.create(registerDto);
