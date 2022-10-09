@@ -2,10 +2,13 @@ import {
   WebSocketGateway,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { FriendsService } from './friends.service';
-import { CreateFriendDto } from './dto/create-friend.dto';
 import { UpdateFriendDto } from './dto/update-friend.dto';
+import { AuthService } from '../auth/auth.service';
+import { CreateFriendDto } from './dto/create-friend.dto';
+import { Socket, Server } from 'socket.io';
 
 @WebSocketGateway({
   namespace: 'friendships',
@@ -14,17 +17,42 @@ import { UpdateFriendDto } from './dto/update-friend.dto';
   },
 })
 export class FriendsGateway {
-  constructor(private readonly friendsService: FriendsService) {}
+  constructor(
+    private readonly friendsService: FriendsService,
+    private readonly authService: AuthService,
+  ) {}
 
-  @SubscribeMessage('createFriend')
-  create(@MessageBody() createFriendDto: CreateFriendDto) {
-    return this.friendsService.create(createFriendDto);
+  @SubscribeMessage('sendFriendRequest')
+  async sendFriendRequest(
+    @MessageBody() createFriendDto: CreateFriendDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    return this.friendsService.sendFriendRequest(user, createFriendDto);
   }
 
-  @SubscribeMessage('findAllFriends')
-  findAll() {
-    console.log('logging');
-    return this.friendsService.findAll();
+  @SubscribeMessage('acceptFriendRequest')
+  async acceptFriendRequest(
+    @MessageBody() updateFriendDto: UpdateFriendDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    return this.friendsService.acceptFriendRequest(user, updateFriendDto);
+  }
+
+  @SubscribeMessage('removeFriendRequest')
+  async removeFriendRequest(
+    @MessageBody() updateFriendDto: UpdateFriendDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    return this.friendsService.removeFriendRequest(user, updateFriendDto);
   }
 
   @SubscribeMessage('findOneFriend')

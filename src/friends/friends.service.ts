@@ -1,21 +1,97 @@
 import { Injectable } from '@nestjs/common';
+import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
+import { serverError } from '../utils/exception';
+import { FriendshipEnum } from '../utils/type';
 import { CreateFriendDto } from './dto/create-friend.dto';
 import { UpdateFriendDto } from './dto/update-friend.dto';
 
 @Injectable()
 export class FriendsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private usersService: UsersService,
+  ) {}
 
-  async create(createFriendDto: CreateFriendDto) {
-    const friend = await this.prisma.friendship.create({
-      data: createFriendDto,
+  async sendFriendRequest(user: User, createFriendDto: CreateFriendDto) {
+    const { email } = createFriendDto;
+    const userId = user.id;
+
+    const friend = await this.usersService.findOneByEmail(email);
+    if (!friend) {
+      serverError(`Can not send friend request`);
+    }
+    const friendId = friend.id;
+
+    const checkExisted = await this.findOneByUserIdAndFriendId(
+      friendId,
+      userId,
+    );
+    if (
+      checkExisted &&
+      checkExisted.type !== FriendshipEnum.CANCEL &&
+      checkExisted.type !== FriendshipEnum.BLOCK
+    ) {
+      serverError(`Can not send friend request`);
+    }
+    const friendships = await this.prisma.friendship.createMany({
+      data: [
+        { type: FriendshipEnum.OUTGOING, userId, friendId },
+        { type: FriendshipEnum.INCOMING, userId: friendId, friendId: userId },
+      ],
     });
-    return friend;
+    // todo: ws sendFriendRequest to receiver
+    return friendships;
   }
 
-  async findAll() {
-    return await this.prisma.friendship.findMany();
+  async acceptFriendRequest(user: User, updateFriendDto: UpdateFriendDto) {
+    const { id, userId, friendId } = updateFriendDto;
+    if (user.id !== userId) {
+      serverError(`No authority`);
+    }
+    await this.update(id, {
+      type: FriendshipEnum.FRIEND,
+    });
+    const friendshipInvert = await this.findOneByUserIdAndFriendId(
+      friendId,
+      userId,
+    );
+    if (!friendshipInvert) {
+      serverError(`No friend data found`);
+    }
+    await this.update(friendshipInvert.id, { type: FriendshipEnum.FRIEND });
+    // todo: ws send friend to homepage to receiver
+    return { ok: true };
+  }
+
+  async removeFriendRequest(user: User, updateFriendDto: UpdateFriendDto) {
+    const { id } = updateFriendDto;
+    const friendship = await this.findOne(id);
+    if (!friendship) {
+      serverError(`No friend data found`);
+    }
+    if (user.id !== friendship.userId && user.id !== friendship.friendId) {
+      serverError(`No authority`);
+    }
+    const friendshipInvert = await this.findOneByUserIdAndFriendId(
+      friendship.friendId,
+      friendship.userId,
+    );
+    if (!friendshipInvert) {
+      serverError(`No friend data found`);
+    }
+    await this.update(id, { type: FriendshipEnum.CANCEL });
+    await this.update(friendshipInvert.id, { type: FriendshipEnum.CANCEL });
+
+    // todo: ws send remove friend to homepage to receiver
+    return { ok: true };
+  }
+
+  async findOneByUserIdAndFriendId(userId: number, friendId: number) {
+    return await this.prisma.friendship.findFirst({
+      where: { userId, friendId },
+    });
   }
 
   async findOne(id: number) {

@@ -11,10 +11,10 @@ export class UpdateFriendDto {
   type: number;
 
   @ApiProperty()
-  @IsNotEmpty()
-  userId: number;
+  @IsOptional()
+  userId?: number;
 
   @ApiProperty()
-  @IsNotEmpty()
-  friendId: number;
+  @IsOptional()
+  friendId?: number;
 }

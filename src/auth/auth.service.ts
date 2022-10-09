@@ -1,10 +1,11 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { User } from '@prisma/client';
+import { serverError } from '../utils/exception';
 
 @Injectable()
 export class AuthService {
@@ -27,16 +28,10 @@ export class AuthService {
     const { email, password } = loginDto;
     const user = await this.usersService.findOneByEmail(email);
     if (!user) {
-      throw new HttpException(
-        `Email or password wrong`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      serverError(`Email or password wrong`);
     }
     if (!(await this.comparePassword(password, user.password))) {
-      throw new HttpException(
-        `Email or password wrong`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      serverError(`Email or password wrong`);
     }
     const result = await this.generateToken(user);
     return {
@@ -48,16 +43,31 @@ export class AuthService {
     const { email, password } = registerDto;
     const existed = await this.usersService.findOneByEmail(email);
     if (existed) {
-      throw new HttpException(
-        `Email duplicate`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      serverError(`Email duplicate`);
     }
     registerDto.password = await this.hashPassword(password);
     const user = await this.usersService.create(registerDto);
     return {
       ok: !!user,
     };
+  }
+
+  async getUserFromToken(token: string): Promise<any> {
+    try {
+      const jwt = token.replace('Bearer ', '');
+      if (jwt == 'null') {
+        return null;
+      }
+      const data = await this.jwtService.verifyAsync(jwt);
+      if (!data) {
+        return null;
+      }
+      const user = await this.usersService.findOne(data.id);
+      const { password, ...result } = user;
+      return result;
+    } catch (err) {
+      return null;
+    }
   }
 
   private async generateToken(user: User) {
