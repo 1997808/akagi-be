@@ -55,6 +55,14 @@ export class FriendsGateway {
     return this.friendsService.removeFriendRequest(user, updateFriendDto);
   }
 
+  @SubscribeMessage('findAllUserFriend')
+  async findAllUserFriend(@ConnectedSocket() socket: Socket) {
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    return this.friendsService.findAllUserFriend(user);
+  }
+
   @SubscribeMessage('findOneFriend')
   findOne(@MessageBody() id: number) {
     return this.friendsService.findOne(id);
