@@ -11,7 +11,6 @@ import { CreateFriendDto } from './dto/create-friend.dto';
 import { Socket, Server } from 'socket.io';
 
 @WebSocketGateway({
-  namespace: 'friendships',
   cors: {
     origin: '*',
   },
@@ -30,7 +29,7 @@ export class FriendsGateway {
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
-    return this.friendsService.sendFriendRequest(user, createFriendDto);
+    return await this.friendsService.sendFriendRequest(user, createFriendDto);
   }
 
   @SubscribeMessage('acceptFriendRequest')
@@ -41,7 +40,7 @@ export class FriendsGateway {
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
-    return this.friendsService.acceptFriendRequest(user, updateFriendDto);
+    return await this.friendsService.acceptFriendRequest(user, updateFriendDto);
   }
 
   @SubscribeMessage('removeFriendRequest')
@@ -52,7 +51,7 @@ export class FriendsGateway {
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
-    return this.friendsService.removeFriendRequest(user, updateFriendDto);
+    return await this.friendsService.removeFriendRequest(user, updateFriendDto);
   }
 
   @SubscribeMessage('findAllUserFriend')

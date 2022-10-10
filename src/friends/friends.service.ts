@@ -95,19 +95,29 @@ export class FriendsService {
   }
 
   async findAllUserFriend(user: User) {
-    const friend = await this.prisma.friendship.findMany({
-      where: { user, type: FriendshipEnum.FRIEND },
-      include: { friend: true },
-    });
-    const friendRequest = await this.prisma.friendship.findMany({
-      where: { user, type: FriendshipEnum.OUTGOING || FriendshipEnum.INCOMING },
+    const friends = await this.prisma.friendship.findMany({
+      where: { user, type: { not: FriendshipEnum.CANCEL } },
       include: { friend: true },
     });
     return {
-      friend,
-      friendRequest,
+      friends,
     };
   }
+
+  // async findAllUserFriend(user: User) {
+  //   const friend = await this.prisma.friendship.findMany({
+  //     where: { user, type: FriendshipEnum.FRIEND },
+  //     include: { friend: true },
+  //   });
+  //   const friendRequest = await this.prisma.friendship.findMany({
+  //     where: { user, type: FriendshipEnum.OUTGOING || FriendshipEnum.INCOMING },
+  //     include: { friend: true },
+  //   });
+  //   return {
+  //     friends,
+  //     friendRequests,
+  //   };
+  // }
 
   async findOne(id: number) {
     return await this.prisma.friendship.findUnique({ where: { id } });
