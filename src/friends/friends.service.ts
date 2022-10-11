@@ -23,8 +23,14 @@ export class FriendsService {
       serverError(`Can not send friend request`);
     }
     const friendId = friend.id;
+    let userSendRequest: any;
+    let userGetRequest: any;
 
     const checkExisted = await this.findOneByUserIdAndFriendId(
+      userId,
+      friendId,
+    );
+    const checkExistedInvert = await this.findOneByUserIdAndFriendId(
       friendId,
       userId,
     );
@@ -35,16 +41,34 @@ export class FriendsService {
     ) {
       serverError(`Can not send friend request`);
     }
-    const userSendRequest = await this.prisma.friendship.create({
-      data: { type: FriendshipEnum.OUTGOING, userId, friendId },
-    });
-    const userGetRequest = await this.prisma.friendship.create({
-      data: {
+
+    if (
+      checkExisted &&
+      (checkExisted.type === FriendshipEnum.CANCEL ||
+        checkExisted.type === FriendshipEnum.BLOCK)
+    ) {
+      userSendRequest = await this.update(checkExisted.id, {
+        type: FriendshipEnum.OUTGOING,
+      });
+      userGetRequest = await this.update(checkExistedInvert.id, {
         type: FriendshipEnum.INCOMING,
-        userId: friendId,
-        friendId: userId,
-      },
-    });
+      });
+    }
+
+    if (!checkExisted) {
+      userSendRequest = await this.prisma.friendship.create({
+        data: { type: FriendshipEnum.OUTGOING, userId, friendId },
+        include: { friend: true },
+      });
+      userGetRequest = await this.prisma.friendship.create({
+        data: {
+          type: FriendshipEnum.INCOMING,
+          userId: friendId,
+          friendId: userId,
+        },
+        include: { friend: true },
+      });
+    }
     // todo: ws sendFriendRequest to receiver
     return { userSendRequest, userGetRequest };
   }
@@ -57,7 +81,7 @@ export class FriendsService {
     if (user.id !== friendship.userId) {
       serverError(`No authority`);
     }
-    await this.update(id, {
+    const userSendRequest = await this.update(id, {
       type: FriendshipEnum.FRIEND,
     });
     const friendshipInvert = await this.findOneByUserIdAndFriendId(
@@ -67,9 +91,11 @@ export class FriendsService {
     if (!friendshipInvert) {
       serverError(`No friend data found`);
     }
-    await this.update(friendshipInvert.id, { type: FriendshipEnum.FRIEND });
+    const userGetRequest = await this.update(friendshipInvert.id, {
+      type: FriendshipEnum.FRIEND,
+    });
     // todo: ws send friend to homepage to receiver
-    return { ok: true };
+    return { userSendRequest, userGetRequest };
   }
 
   async removeFriendRequest(user: User, updateFriendDto: UpdateFriendDto) {
@@ -88,16 +114,21 @@ export class FriendsService {
     if (!friendshipInvert) {
       serverError(`No friend data found`);
     }
-    await this.update(id, { type: FriendshipEnum.CANCEL });
-    await this.update(friendshipInvert.id, { type: FriendshipEnum.CANCEL });
+    const userSendRequest = await this.update(id, {
+      type: FriendshipEnum.CANCEL,
+    });
+    const userGetRequest = await this.update(friendshipInvert.id, {
+      type: FriendshipEnum.CANCEL,
+    });
 
     // todo: ws send remove friend to homepage to receiver
-    return { ok: true };
+    return { userSendRequest, userGetRequest };
   }
 
   async findOneByUserIdAndFriendId(userId: number, friendId: number) {
     return await this.prisma.friendship.findFirst({
       where: { userId, friendId },
+      include: { friend: true },
     });
   }
 
@@ -132,6 +163,7 @@ export class FriendsService {
     return await this.prisma.friendship.update({
       where: { id },
       data: updateFriendDto,
+      include: { friend: true },
     });
   }
 

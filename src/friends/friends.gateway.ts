@@ -36,14 +36,8 @@ export class FriendsGateway {
       user,
       createFriendDto,
     );
-    this.server.emit(
-      `ADD_FRIEND_${friendRequests.userSendRequest.userId}`,
-      friendRequests.userSendRequest,
-    );
-    this.server.emit(
-      `ADD_FRIEND_${friendRequests.userGetRequest.userId}`,
-      friendRequests.userGetRequest,
-    );
+    this.server.emit(`ADD_FRIEND`, friendRequests.userSendRequest);
+    this.server.emit(`ADD_FRIEND`, friendRequests.userGetRequest);
   }
 
   @SubscribeMessage('acceptFriendRequest')
@@ -54,7 +48,12 @@ export class FriendsGateway {
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
-    return await this.friendsService.acceptFriendRequest(user, updateFriendDto);
+    const friendRequests = await this.friendsService.acceptFriendRequest(
+      user,
+      updateFriendDto,
+    );
+    this.server.emit(`UPDATE_FRIEND`, friendRequests.userSendRequest);
+    this.server.emit(`UPDATE_FRIEND`, friendRequests.userGetRequest);
   }
 
   @SubscribeMessage('removeFriendRequest')
@@ -65,7 +64,12 @@ export class FriendsGateway {
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
-    return await this.friendsService.removeFriendRequest(user, updateFriendDto);
+    const friendRequests = await this.friendsService.removeFriendRequest(
+      user,
+      updateFriendDto,
+    );
+    this.server.emit(`REMOVE_FRIEND`, friendRequests.userSendRequest);
+    this.server.emit(`REMOVE_FRIEND`, friendRequests.userGetRequest);
   }
 
   @SubscribeMessage('findAllUserFriend')
