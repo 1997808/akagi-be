@@ -3,6 +3,7 @@ import {
   SubscribeMessage,
   MessageBody,
   ConnectedSocket,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { FriendsService } from './friends.service';
 import { UpdateFriendDto } from './dto/update-friend.dto';
@@ -21,6 +22,8 @@ export class FriendsGateway {
     private readonly authService: AuthService,
   ) {}
 
+  @WebSocketServer() private server: Server;
+
   @SubscribeMessage('sendFriendRequest')
   async sendFriendRequest(
     @MessageBody() createFriendDto: CreateFriendDto,
@@ -29,7 +32,18 @@ export class FriendsGateway {
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
-    return await this.friendsService.sendFriendRequest(user, createFriendDto);
+    const friendRequests = await this.friendsService.sendFriendRequest(
+      user,
+      createFriendDto,
+    );
+    this.server.emit(
+      `ADD_FRIEND_${friendRequests.userSendRequest.userId}`,
+      friendRequests.userSendRequest,
+    );
+    this.server.emit(
+      `ADD_FRIEND_${friendRequests.userGetRequest.userId}`,
+      friendRequests.userGetRequest,
+    );
   }
 
   @SubscribeMessage('acceptFriendRequest')

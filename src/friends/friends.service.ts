@@ -35,27 +35,34 @@ export class FriendsService {
     ) {
       serverError(`Can not send friend request`);
     }
-    const friendships = await this.prisma.friendship.createMany({
-      data: [
-        { type: FriendshipEnum.OUTGOING, userId, friendId },
-        { type: FriendshipEnum.INCOMING, userId: friendId, friendId: userId },
-      ],
+    const userSendRequest = await this.prisma.friendship.create({
+      data: { type: FriendshipEnum.OUTGOING, userId, friendId },
+    });
+    const userGetRequest = await this.prisma.friendship.create({
+      data: {
+        type: FriendshipEnum.INCOMING,
+        userId: friendId,
+        friendId: userId,
+      },
     });
     // todo: ws sendFriendRequest to receiver
-    return friendships;
+    return { userSendRequest, userGetRequest };
   }
 
   async acceptFriendRequest(user: User, updateFriendDto: UpdateFriendDto) {
-    const { id, userId, friendId } = updateFriendDto;
-    if (user.id !== userId) {
+    const { id } = updateFriendDto;
+    const friendship = await this.prisma.friendship.findFirst({
+      where: { id, type: { not: FriendshipEnum.FRIEND } },
+    });
+    if (user.id !== friendship.userId) {
       serverError(`No authority`);
     }
     await this.update(id, {
       type: FriendshipEnum.FRIEND,
     });
     const friendshipInvert = await this.findOneByUserIdAndFriendId(
-      friendId,
-      userId,
+      friendship.friendId,
+      friendship.userId,
     );
     if (!friendshipInvert) {
       serverError(`No friend data found`);
@@ -99,9 +106,7 @@ export class FriendsService {
       where: { user, type: { not: FriendshipEnum.CANCEL } },
       include: { friend: true },
     });
-    return {
-      friends,
-    };
+    return friends;
   }
 
   // async findAllUserFriend(user: User) {

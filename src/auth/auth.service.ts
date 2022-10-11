@@ -18,7 +18,7 @@ export class AuthService {
     const user = await this.usersService.findOneByEmail(email);
     if (user) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...result } = user;
+      const { password, verifyToken, ...result } = user;
       return result;
     }
     return null;
@@ -63,10 +63,32 @@ export class AuthService {
         return null;
       }
       const user = await this.usersService.findOne(data.id);
-      const { password, ...result } = user;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, verifyToken, ...result } = user;
       return result;
     } catch (err) {
       return null;
+    }
+  }
+
+  async checkToken(request: any) {
+    try {
+      if (!request.headers.authorization) {
+        return false;
+      }
+      const jwt = request.headers.authorization.replace('Bearer ', '');
+      if (jwt === 'null' || jwt === '') {
+        return false;
+      }
+      const data = await this.jwtService.verifyAsync(jwt);
+      if (!data) {
+        return false;
+      }
+      const user = await this.usersService.findOne(data.id);
+      if (user) return true;
+      return false;
+    } catch (err) {
+      return false;
     }
   }
 
