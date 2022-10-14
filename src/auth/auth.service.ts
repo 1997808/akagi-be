@@ -52,7 +52,7 @@ export class AuthService {
     };
   }
 
-  async getUserFromToken(token: string): Promise<any> {
+  async getUserFromToken(token: string) {
     try {
       const jwt = token.replace('Bearer ', '');
       if (jwt == 'null') {
@@ -63,9 +63,8 @@ export class AuthService {
         return null;
       }
       const user = await this.usersService.findOne(data.id);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, verifyToken, ...result } = user;
-      return result;
+      // const { password, verifyToken, ...result } = user;
+      return user;
     } catch (err) {
       return null;
     }
