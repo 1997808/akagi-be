@@ -36,8 +36,13 @@ export class FriendsGateway {
       user,
       createFriendDto,
     );
-    this.server.emit(`ADD_FRIEND`, friendRequests.userSendRequest);
-    this.server.emit(`ADD_FRIEND`, friendRequests.userGetRequest);
+    console.log(friendRequests);
+    this.server
+      .to(`${friendRequests.userSendRequest.userId}`)
+      .emit(`ADD_FRIEND`, friendRequests.userSendRequest);
+    this.server
+      .to(`${friendRequests.userGetRequest.userId}`)
+      .emit(`ADD_FRIEND`, friendRequests.userGetRequest);
   }
 
   @SubscribeMessage('acceptFriendRequest')
@@ -52,8 +57,12 @@ export class FriendsGateway {
       user,
       updateFriendDto,
     );
-    this.server.emit(`UPDATE_FRIEND`, friendRequests.userSendRequest);
-    this.server.emit(`UPDATE_FRIEND`, friendRequests.userGetRequest);
+    this.server
+      .to(`${friendRequests.userSendRequest.userId}`)
+      .emit(`UPDATE_FRIEND`, friendRequests.userSendRequest);
+    this.server
+      .to(`${friendRequests.userGetRequest.userId}`)
+      .emit(`UPDATE_FRIEND`, friendRequests.userGetRequest);
   }
 
   @SubscribeMessage('removeFriendRequest')
@@ -68,8 +77,12 @@ export class FriendsGateway {
       user,
       updateFriendDto,
     );
-    this.server.emit(`REMOVE_FRIEND`, friendRequests.userSendRequest);
-    this.server.emit(`REMOVE_FRIEND`, friendRequests.userGetRequest);
+    this.server
+      .to(`${friendRequests.userSendRequest.userId}`)
+      .emit(`REMOVE_FRIEND`, friendRequests.userSendRequest);
+    this.server
+      .to(`${friendRequests.userGetRequest.userId}`)
+      .emit(`REMOVE_FRIEND`, friendRequests.userGetRequest);
   }
 
   @SubscribeMessage('findAllUserFriend')
