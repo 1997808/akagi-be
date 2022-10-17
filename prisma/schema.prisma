@@ -19,6 +19,7 @@ model User {
   verify      Boolean      @default(false)
   userFriends Friendship[] @relation(name: "user")
   friends     Friendship[] @relation(name: "friend")
+  members     Member[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @default(now()) @updatedAt
 }
@@ -30,5 +31,85 @@ model Friendship {
   user      User     @relation(name: "user", fields: [userId], references: [id])
   friendId  Int
   friend    User     @relation(name: "friend", fields: [friendId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Group {
+  id        Int       @id @default(autoincrement())
+  name      String
+  iconURL   String
+  // ownerId        String
+  channel   Channel[]
+  members   Member[]
+  roles     Role[]
+  invites   Invite[]
+  createdAt DateTime  @default(now())
+}
+
+model Member {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  user      User             @relation(fields: [userId], references: [id])
+  groupId   Int
+  group     Group            @relation(fields: [groupId], references: [id])
+  messages  Message[]
+  roles     RolesOnMembers[]
+  createdAt DateTime         @default(now())
+}
+
+model Role {
+  id        Int              @id @default(autoincrement())
+  groupId   Int
+  group     Group            @relation(fields: [groupId], references: [id])
+  createdAt DateTime         @default(now())
+  members   RolesOnMembers[]
+}
+
+model RolesOnMembers {
+  member     Member   @relation(fields: [memberId], references: [id])
+  memberId   Int
+  role       Role     @relation(fields: [roleId], references: [id])
+  roleId     Int
+  assignedAt DateTime @default(now())
+  assignedBy String
+
+  @@id([memberId, roleId])
+}
+
+model Channel {
+  id          Int       @id @default(autoincrement())
+  name        String
+  // firstMessageId Int
+  // lastMessageId  Int
+  // position    Int show in ui
+  type        String
+  description String
+  groupId     Int
+  group       Group     @relation(fields: [groupId], references: [id])
+  messages    Message[]
+  createdAt   DateTime  @default(now())
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  content   String
+  image     String
+  ChannelId Int
+  Channel   Channel  @relation(fields: [ChannelId], references: [id])
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invite {
+  id        Int      @id @default(autoincrement())
+  uses      Int
+  maxUses   Int
+  // createdBy   Int 
+  // createdUser User     @relation(name: "user", fields: [createdBy], references: [id])
+  // expireDate DateTime
+  groupId   Int
+  group     Group    @relation(fields: [groupId], references: [id])
   createdAt DateTime @default(now())
 }
