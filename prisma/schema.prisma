@@ -54,6 +54,7 @@ model Member {
   group     Group            @relation(fields: [groupId], references: [id])
   messages  Message[]
   roles     RolesOnMembers[]
+  invites   Invite[]
   createdAt DateTime         @default(now())
 }
 
@@ -71,29 +72,29 @@ model RolesOnMembers {
   role       Role     @relation(fields: [roleId], references: [id])
   roleId     Int
   assignedAt DateTime @default(now())
-  assignedBy String
+  // assignedBy String
 
   @@id([memberId, roleId])
 }
 
 model Channel {
-  id          Int       @id @default(autoincrement())
-  name        String
-  // firstMessageId Int
-  // lastMessageId  Int
+  id             Int         @id @default(autoincrement())
+  name           String      @default("general")
+  firstMessageId Int?
+  lastMessageId  Int?
   // position    Int show in ui
-  type        String
-  description String
-  groupId     Int
-  group       Group     @relation(fields: [groupId], references: [id])
-  messages    Message[]
-  createdAt   DateTime  @default(now())
+  type           ChannelType @default(TEXT)
+  description    String?
+  groupId        Int
+  group          Group       @relation(fields: [groupId], references: [id])
+  messages       Message[]
+  createdAt      DateTime    @default(now())
 }
 
 model Message {
   id        Int      @id @default(autoincrement())
-  content   String
-  image     String
+  content   String?
+  image     String?
   ChannelId Int
   Channel   Channel  @relation(fields: [ChannelId], references: [id])
   memberId  Int
@@ -103,13 +104,26 @@ model Message {
 }
 
 model Invite {
-  id        Int      @id @default(autoincrement())
-  uses      Int
-  maxUses   Int
-  // createdBy   Int 
-  // createdUser User     @relation(name: "user", fields: [createdBy], references: [id])
+  id                Int      @id @default(autoincrement())
+  uses              Int      @default(0)
+  maxUses           Int      @default(1)
+  createdByMemberId Int
+  createdByMember   Member   @relation(fields: [createdByMemberId], references: [id])
   // expireDate DateTime
-  groupId   Int
-  group     Group    @relation(fields: [groupId], references: [id])
-  createdAt DateTime @default(now())
+  groupId           Int
+  group             Group    @relation(fields: [groupId], references: [id])
+  createdAt         DateTime @default(now())
+}
+
+// enum FriendshipType {
+//   FRIEND: 1
+//   OUTGOING: 2
+//   INCOMING: 3
+//   CANCEL: 4
+//   BLOCK: 5
+// }
+
+enum ChannelType {
+  TEXT
+  VOICE
 }
