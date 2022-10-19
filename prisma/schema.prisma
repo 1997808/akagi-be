@@ -37,7 +37,7 @@ model Friendship {
 model Group {
   id        Int       @id @default(autoincrement())
   name      String
-  iconURL   String
+  iconURL   String?
   // ownerId        String
   channel   Channel[]
   members   Member[]

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Group" ALTER COLUMN "iconURL" DROP NOT NULL;
