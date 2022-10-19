@@ -9,7 +9,7 @@ import { CreateGroupDto } from './dto/create-group.dto';
 @Controller('groups')
 @ApiBearerAuth('defaultToken')
 @ApiTags('groups')
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
 

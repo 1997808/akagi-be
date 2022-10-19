@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsOptional } from 'class-validator';
 
 export class UpdateGroupDto {
   @ApiProperty()
@@ -7,10 +7,10 @@ export class UpdateGroupDto {
   id: number;
 
   @ApiProperty()
-  @IsNotEmpty()
+  @IsOptional()
   name: string;
 
   @ApiProperty()
-  @IsNotEmpty()
+  @IsOptional()
   iconURL: string;
 }
