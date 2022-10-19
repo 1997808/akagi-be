@@ -9,7 +9,7 @@ import { CreateMemberDto } from './dto/create-member.dto';
 @Controller('members')
 @ApiBearerAuth('defaultToken')
 @ApiTags('members')
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 

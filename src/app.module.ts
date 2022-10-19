@@ -8,9 +8,10 @@ import { FriendsModule } from './friends/friends.module';
 import { GroupsModule } from './groups/groups.module';
 import { ChannelsModule } from './channels/channels.module';
 import { MembersModule } from './members/members.module';
+import { InvitesModule } from './invites/invites.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, AuthModule, FriendsModule, GroupsModule, ChannelsModule, MembersModule],
+  imports: [PrismaModule, UsersModule, AuthModule, FriendsModule, GroupsModule, ChannelsModule, MembersModule, InvitesModule],
   controllers: [AppController],
   providers: [AppService],
 })
