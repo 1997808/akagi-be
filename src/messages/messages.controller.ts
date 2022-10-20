@@ -9,12 +9,12 @@ import { CreateMessageDto } from './dto/create-message.dto';
 @Controller('messages')
 @ApiBearerAuth('defaultToken')
 @ApiTags('messages')
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
   @Get()
-  async findAllMessageByUser(@AuthUser() user: User) {
+  async findAllMessage(@AuthUser() user: User) {
     return await this.messagesService.findAll();
   }
 

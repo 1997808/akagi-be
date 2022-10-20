@@ -59,11 +59,13 @@ model Member {
 }
 
 model Role {
-  id        Int              @id @default(autoincrement())
-  groupId   Int
-  group     Group            @relation(fields: [groupId], references: [id])
-  createdAt DateTime         @default(now())
-  members   RolesOnMembers[]
+  id          Int              @id @default(autoincrement())
+  name        String
+  permissions Int[]            @default([])
+  groupId     Int
+  group       Group            @relation(fields: [groupId], references: [id])
+  members     RolesOnMembers[]
+  createdAt   DateTime         @default(now())
 }
 
 model RolesOnMembers {
