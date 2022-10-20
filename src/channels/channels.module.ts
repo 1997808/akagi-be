@@ -8,5 +8,6 @@ import { ChannelsController } from './channels.controller';
   imports: [PrismaModule],
   controllers: [ChannelsController],
   providers: [ChannelsGateway, ChannelsService],
+  exports: [ChannelsService],
 })
 export class ChannelsModule {}

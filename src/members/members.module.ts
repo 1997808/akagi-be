@@ -8,5 +8,6 @@ import { MembersController } from './members.controller';
   imports: [PrismaModule],
   controllers: [MembersController],
   providers: [MembersGateway, MembersService],
+  exports: [MembersService],
 })
 export class MembersModule {}

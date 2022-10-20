@@ -20,6 +20,6 @@ export class GroupsController {
 
   @Post()
   async create(@AuthUser() user: User, @Body() createGroupDto: CreateGroupDto) {
-    return await this.groupsService.create(createGroupDto);
+    return await this.groupsService.create(user, createGroupDto);
   }
 }

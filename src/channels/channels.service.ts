@@ -19,6 +19,10 @@ export class ChannelsService {
     return await this.prisma.channel.findUnique({ where: { id } });
   }
 
+  async findGroupChannels(groupId: number) {
+    return await this.prisma.channel.findMany({ where: { groupId } });
+  }
+
   async update(id: number, updateChannelDto: UpdateChannelDto) {
     return await this.prisma.channel.update({
       where: { id },

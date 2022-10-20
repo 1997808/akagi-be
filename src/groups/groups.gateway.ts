@@ -2,18 +2,30 @@ import {
   WebSocketGateway,
   SubscribeMessage,
   MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { GroupsService } from './groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
+import { Socket } from 'socket.io';
+import { AuthService } from '../auth/auth.service';
 
 @WebSocketGateway()
 export class GroupsGateway {
-  constructor(private readonly groupsService: GroupsService) {}
+  constructor(
+    private readonly groupsService: GroupsService,
+    private readonly authService: AuthService,
+  ) {}
 
   @SubscribeMessage('createGroup')
-  create(@MessageBody() createGroupDto: CreateGroupDto) {
-    return this.groupsService.create(createGroupDto);
+  async create(
+    @MessageBody() createGroupDto: CreateGroupDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    return this.groupsService.create(user, createGroupDto);
   }
 
   @SubscribeMessage('findAllGroups')

@@ -19,6 +19,10 @@ export class RolesService {
     return await this.prisma.role.findUnique({ where: { id } });
   }
 
+  async findGroupRoles(groupId: number) {
+    return await this.prisma.role.findMany({ where: { groupId } });
+  }
+
   async update(id: number, updateRoleDto: UpdateRoleDto) {
     return await this.prisma.role.update({
       where: { id },
