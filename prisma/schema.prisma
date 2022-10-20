@@ -95,8 +95,8 @@ model Message {
   id        Int      @id @default(autoincrement())
   content   String?
   image     String?
-  ChannelId Int
-  Channel   Channel  @relation(fields: [ChannelId], references: [id])
+  channelId Int
+  channel   Channel  @relation(fields: [channelId], references: [id])
   memberId  Int
   member    Member   @relation(fields: [memberId], references: [id])
   createdAt DateTime @default(now())
