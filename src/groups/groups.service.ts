@@ -52,7 +52,11 @@ export class GroupsService {
   }
 
   async remove(id: number) {
-    return await this.prisma.group.delete({ where: { id } });
+    await this.prisma.member.deleteMany({ where: { groupId: id } });
+    await this.prisma.invite.deleteMany({ where: { groupId: id } });
+    await this.prisma.role.deleteMany({ where: { groupId: id } });
+    await this.prisma.channel.deleteMany({ where: { groupId: id } });
+    await this.prisma.group.delete({ where: { id } });
   }
 
   async getFullGroupData(id: number) {
