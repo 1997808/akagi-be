@@ -13,4 +13,8 @@ export class UpdateGroupDto {
   @ApiProperty()
   @IsOptional()
   iconURL: string;
+
+  @ApiProperty()
+  @IsOptional()
+  memberOwnerId?: number;
 }

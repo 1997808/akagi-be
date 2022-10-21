@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateInviteDto {
   @ApiProperty()
@@ -9,6 +9,10 @@ export class CreateInviteDto {
   @ApiProperty()
   @IsNotEmpty()
   createdByMemberId: number;
+
+  @ApiProperty()
+  @IsOptional()
+  token: string;
 
   @ApiProperty()
   @IsNotEmpty()

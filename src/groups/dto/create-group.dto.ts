@@ -9,4 +9,8 @@ export class CreateGroupDto {
   @ApiProperty()
   @IsOptional()
   iconURL?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  memberOwnerId?: number;
 }

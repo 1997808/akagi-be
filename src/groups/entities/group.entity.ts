@@ -12,5 +12,8 @@ export class GroupEntity implements Group {
   iconURL: string;
 
   @ApiProperty()
+  memberOwnerId: number;
+
+  @ApiProperty()
   createdAt: Date;
 }

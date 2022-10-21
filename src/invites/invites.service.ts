@@ -8,7 +8,9 @@ export class InvitesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createInviteDto: CreateInviteDto) {
-    return await this.prisma.invite.create({ data: createInviteDto });
+    return await this.prisma.invite.create({
+      data: createInviteDto,
+    });
   }
 
   async findAll() {

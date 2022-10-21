@@ -13,6 +13,9 @@ export class InviteEntity implements Invite {
   maxUses: number;
 
   @ApiProperty()
+  token: string;
+
+  @ApiProperty()
   createdByMemberId: number;
 
   @ApiProperty()
