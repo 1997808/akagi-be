@@ -35,27 +35,29 @@ model Friendship {
 }
 
 model Group {
-  id        Int       @id @default(autoincrement())
-  name      String
-  iconURL   String?
-  // ownerId        String
-  channel   Channel[]
-  members   Member[]
-  roles     Role[]
-  invites   Invite[]
-  createdAt DateTime  @default(now())
+  id            Int       @id @default(autoincrement())
+  name          String
+  iconURL       String?
+  memberOwnerId Int?      @unique
+  memberOwner   Member?   @relation(name: "owner", fields: [memberOwnerId], references: [id])
+  channels      Channel[]
+  members       Member[]  @relation(name: "groupMember")
+  roles         Role[]
+  invites       Invite[]
+  createdAt     DateTime  @default(now())
 }
 
 model Member {
-  id        Int              @id @default(autoincrement())
-  userId    Int
-  user      User             @relation(fields: [userId], references: [id])
-  groupId   Int
-  group     Group            @relation(fields: [groupId], references: [id])
-  messages  Message[]
-  roles     RolesOnMembers[]
-  invites   Invite[]
-  createdAt DateTime         @default(now())
+  id         Int              @id @default(autoincrement())
+  userId     Int
+  user       User             @relation(fields: [userId], references: [id])
+  groupId    Int
+  group      Group            @relation(name: "groupMember", fields: [groupId], references: [id])
+  groupOwner Group?           @relation(name: "owner")
+  messages   Message[]
+  roles      RolesOnMembers[]
+  invites    Invite[]
+  createdAt  DateTime         @default(now())
 }
 
 model Role {
@@ -109,6 +111,7 @@ model Invite {
   id                Int      @id @default(autoincrement())
   uses              Int      @default(0)
   maxUses           Int      @default(1)
+  token             String   @unique
   createdByMemberId Int
   createdByMember   Member   @relation(fields: [createdByMemberId], references: [id])
   // expireDate DateTime
