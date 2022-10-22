@@ -7,7 +7,12 @@ import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+  namespace: '/',
+})
 export class RolesGateway {
   constructor(private readonly rolesService: RolesService) {}
 

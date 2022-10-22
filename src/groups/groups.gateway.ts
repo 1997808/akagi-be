@@ -10,7 +10,12 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { Socket } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+  namespace: '/',
+})
 export class GroupsGateway {
   constructor(
     private readonly groupsService: GroupsService,

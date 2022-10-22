@@ -7,7 +7,12 @@ import { MembersService } from './members.service';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+  namespace: '/',
+})
 export class MembersGateway {
   constructor(private readonly membersService: MembersService) {}
 

@@ -13,7 +13,18 @@ import { MessagesModule } from './messages/messages.module';
 import { RolesModule } from './roles/roles.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, AuthModule, FriendsModule, GroupsModule, ChannelsModule, MembersModule, InvitesModule, MessagesModule, RolesModule],
+  imports: [
+    PrismaModule,
+    UsersModule,
+    AuthModule,
+    FriendsModule,
+    GroupsModule,
+    ChannelsModule,
+    MembersModule,
+    InvitesModule,
+    MessagesModule,
+    RolesModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

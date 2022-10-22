@@ -7,7 +7,12 @@ import { ChannelsService } from './channels.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+  namespace: '/',
+})
 export class ChannelsGateway {
   constructor(private readonly channelsService: ChannelsService) {}
 

@@ -15,6 +15,7 @@ import { Socket, Server } from 'socket.io';
   cors: {
     origin: '*',
   },
+  namespace: '/',
 })
 export class FriendsGateway {
   constructor(
@@ -36,7 +37,6 @@ export class FriendsGateway {
       user,
       createFriendDto,
     );
-    console.log(friendRequests);
     this.server
       .to(`${friendRequests.userSendRequest.userId}`)
       .emit(`ADD_FRIEND`, friendRequests.userSendRequest);

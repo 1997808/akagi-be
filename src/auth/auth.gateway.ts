@@ -11,10 +11,10 @@ import { Socket, Server } from 'socket.io';
   cors: {
     origin: '*',
   },
+  namespace: '/',
 })
 export class AuthGateway {
   constructor(private readonly authService: AuthService) {}
-
   @WebSocketServer() private server: Server;
 
   @SubscribeMessage('loginSuccess')

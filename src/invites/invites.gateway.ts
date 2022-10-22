@@ -7,7 +7,12 @@ import { InvitesService } from './invites.service';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { UpdateInviteDto } from './dto/update-invite.dto';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+  },
+  namespace: '/',
+})
 export class InvitesGateway {
   constructor(private readonly invitesService: InvitesService) {}
 
