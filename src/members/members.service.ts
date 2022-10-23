@@ -20,6 +20,19 @@ export class MembersService {
     return await this.prisma.member.findUnique({ where: { id } });
   }
 
+  async findAllGroupUserIn(userId: number) {
+    const result = await this.prisma.member.findMany({
+      where: { userId },
+      select: { group: true },
+      orderBy: { group: { name: 'asc' } },
+    });
+    return result.map((item) => item.group);
+  }
+
+  async isUserGroupMember(userId: number, groupId: number) {
+    return await this.prisma.member.findMany({ where: { userId, groupId } });
+  }
+
   async findGroupMembers(groupId: number) {
     return await this.prisma.member.findMany({ where: { groupId } });
   }

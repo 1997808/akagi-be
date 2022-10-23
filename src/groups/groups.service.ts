@@ -36,12 +36,16 @@ export class GroupsService {
     return group;
   }
 
-  async findAll() {
-    return await this.prisma.group.findMany();
+  async findAll(userId: number) {
+    return await this.membersService.findAllGroupUserIn(userId);
+    // return await this.prisma.group.findMany();
   }
 
   async findOne(id: number) {
-    return await this.prisma.group.findUnique({ where: { id } });
+    return await this.prisma.group.findUnique({
+      where: { id },
+      include: { channels: true, members: true, roles: true, invites: true },
+    });
   }
 
   async update(id: number, updateGroupDto: UpdateGroupDto) {

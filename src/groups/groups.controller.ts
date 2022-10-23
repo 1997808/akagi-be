@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { GroupsService } from './groups.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
@@ -15,7 +15,12 @@ export class GroupsController {
 
   @Get()
   async findAllGroupByUser(@AuthUser() user: User) {
-    return await this.groupsService.findAll();
+    return await this.groupsService.findAll(user.id);
+  }
+
+  @Get(':id')
+  async findGroupById(@AuthUser() user: User, @Param('id') id: string) {
+    return await this.groupsService.findOne(+id);
   }
 
   @Post()

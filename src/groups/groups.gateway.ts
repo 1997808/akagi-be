@@ -34,8 +34,11 @@ export class GroupsGateway {
   }
 
   @SubscribeMessage('findAllGroups')
-  findAll() {
-    return this.groupsService.findAll();
+  async findAll(@ConnectedSocket() socket: Socket) {
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    return this.groupsService.findAll(user.id);
   }
 
   @SubscribeMessage('findOneGroup')
