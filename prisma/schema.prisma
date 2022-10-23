@@ -38,6 +38,8 @@ model Group {
   id            Int       @id @default(autoincrement())
   name          String
   iconURL       String?
+  type          GroupType @default(GROUP)
+  isPublic      Boolean   @default(false)
   memberOwnerId Int?      @unique
   memberOwner   Member?   @relation(name: "owner", fields: [memberOwnerId], references: [id])
   channels      Channel[]
@@ -127,6 +129,11 @@ model Invite {
 //   CANCEL: 4
 //   BLOCK: 5
 // }
+
+enum GroupType {
+  DIRECT
+  GROUP
+}
 
 enum ChannelType {
   TEXT

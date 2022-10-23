@@ -16,5 +16,9 @@ export class UpdateGroupDto {
 
   @ApiProperty()
   @IsOptional()
+  isPublic: boolean; //cant change if type DIRECT
+
+  @ApiProperty()
+  @IsOptional()
   memberOwnerId?: number;
 }

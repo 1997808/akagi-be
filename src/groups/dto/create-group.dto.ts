@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { GroupType } from '@prisma/client';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateGroupDto {
@@ -9,6 +10,14 @@ export class CreateGroupDto {
   @ApiProperty()
   @IsOptional()
   iconURL?: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  type: GroupType;
+
+  @ApiProperty()
+  @IsOptional()
+  isPublic?: boolean;
 
   @ApiProperty()
   @IsOptional()
