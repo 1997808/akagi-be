@@ -2,10 +2,14 @@ import {
   WebSocketGateway,
   SubscribeMessage,
   MessageBody,
+  WebSocketServer,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { ChannelsService } from './channels.service';
+import { Socket, Server } from 'socket.io';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
+import { AuthService } from '../auth/auth.service';
 
 @WebSocketGateway({
   cors: {
@@ -14,11 +18,25 @@ import { UpdateChannelDto } from './dto/update-channel.dto';
   namespace: '/',
 })
 export class ChannelsGateway {
-  constructor(private readonly channelsService: ChannelsService) {}
+  constructor(
+    private readonly channelsService: ChannelsService,
+    private readonly authService: AuthService,
+  ) {}
+  @WebSocketServer() server: Server;
 
   @SubscribeMessage('createChannel')
-  create(@MessageBody() createChannelDto: CreateChannelDto) {
-    return this.channelsService.create(createChannelDto);
+  async create(
+    @MessageBody() createChannelDto: CreateChannelDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    // todo check user have role to create channel
+    const channels = await this.channelsService.create(createChannelDto);
+    return this.server
+      .to(`${createChannelDto.groupId}`)
+      .emit('CHANNEL_CREATED', channels);
   }
 
   @SubscribeMessage('findAllChannels')
