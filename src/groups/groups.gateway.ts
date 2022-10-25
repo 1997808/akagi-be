@@ -10,6 +10,7 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { Socket, Server } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
+import { serverError } from '../utils/exception';
 
 @WebSocketGateway({
   cors: {
@@ -23,6 +24,22 @@ export class GroupsGateway {
     private readonly authService: AuthService,
   ) {}
   @WebSocketServer() server: Server;
+
+  @SubscribeMessage('listenGroup')
+  async listenGroup(
+    @MessageBody() id: number,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    const group = await this.groupsService.findOne(id);
+    if (!group) {
+      serverError(`Can not find group`);
+    }
+    await socket.join(`GROUP-${group.id}`);
+    return this.server.to(`${user.id}`).emit('JOIN_GROUP_READY');
+  }
 
   @SubscribeMessage('createGroup')
   async create(

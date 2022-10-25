@@ -10,6 +10,7 @@ import { Socket, Server } from 'socket.io';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
 import { AuthService } from '../auth/auth.service';
+import { serverError } from '../utils/exception';
 
 @WebSocketGateway({
   cors: {
@@ -23,6 +24,22 @@ export class ChannelsGateway {
     private readonly authService: AuthService,
   ) {}
   @WebSocketServer() server: Server;
+
+  @SubscribeMessage('listenChannel')
+  async listenChannel(
+    @MessageBody() id: number,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    const channel = await this.channelsService.findOne(id);
+    if (!channel) {
+      serverError(`Can not find channel`);
+    }
+    await socket.join(`CHANNEL-${channel.id}`);
+    return this.server.to(`${user.id}`).emit('JOIN_CHANNEL_READY');
+  }
 
   @SubscribeMessage('createChannel')
   async create(
