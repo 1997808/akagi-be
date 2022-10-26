@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ChannelsService } from './channels.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
@@ -16,6 +16,11 @@ export class ChannelsController {
   @Get()
   async findAllChannelByUser(@AuthUser() user: User) {
     return await this.channelsService.findAll();
+  }
+
+  @Get(':id')
+  async findChannelById(@AuthUser() user: User, @Param('id') id: string) {
+    return await this.channelsService.findOne(+id);
   }
 
   @Post()
