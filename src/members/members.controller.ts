@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { AuthUser } from '../users/user.decorator';
 import { User } from '@prisma/client';
 import { CreateMemberDto } from './dto/create-member.dto';
+import { MemberQueryDto } from './dto/member-query.dto';
 
 @Controller('members')
 @ApiBearerAuth('defaultToken')
@@ -16,6 +17,14 @@ export class MembersController {
   @Get()
   async findAllMemberByUser(@AuthUser() user: User) {
     return await this.membersService.findAll();
+  }
+
+  @Post('group')
+  async findPaginateMember(
+    @AuthUser() user: User,
+    @Body() memberQueryDto: MemberQueryDto,
+  ) {
+    return await this.membersService.findPaginateMember(memberQueryDto);
   }
 
   @Post()

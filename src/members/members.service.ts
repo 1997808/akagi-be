@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMemberDto } from './dto/create-member.dto';
+import { MemberQueryDto } from './dto/member-query.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 
 @Injectable()
@@ -35,6 +37,18 @@ export class MembersService {
 
   async findGroupMembers(groupId: number) {
     return await this.prisma.member.findMany({ where: { groupId } });
+  }
+
+  async findPaginateMember(memberQueryDto: MemberQueryDto) {
+    const { take, page, groupId } = memberQueryDto;
+    const skip = (page - 1) * take;
+    return await this.prisma.member.findMany({
+      skip: skip,
+      take: take,
+      where: { groupId },
+      include: { user: true },
+      orderBy: { user: { username: 'asc' } },
+    });
   }
 
   async update(id: number, updateMemberDto: UpdateMemberDto) {
