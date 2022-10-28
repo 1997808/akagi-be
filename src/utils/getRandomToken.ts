@@ -11,3 +11,13 @@ export function getRandomToken6(): string {
   const token = Math.floor(Math.random() * (max - min + 1) + min);
   return token.toString();
 }
+
+export function getRandomToken(
+  groupId: number,
+  createdByMemberId: number,
+): string {
+  const random = getRandomToken6();
+  const now = Date.now();
+  const token = random + now + groupId + createdByMemberId;
+  return token.toString();
+}

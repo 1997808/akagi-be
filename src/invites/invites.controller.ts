@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { InvitesService } from './invites.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
@@ -13,9 +13,12 @@ import { CreateInviteDto } from './dto/create-invite.dto';
 export class InvitesController {
   constructor(private readonly invitesService: InvitesService) {}
 
-  @Get()
-  async findAllInvite(@AuthUser() user: User) {
-    return await this.invitesService.findAll();
+  @Get('group/:groupId')
+  async findOneAvailableByGroupId(
+    @AuthUser() user: User,
+    @Param('groupId') groupId: string,
+  ) {
+    return await this.invitesService.findOneAvailableByGroupId(+groupId);
   }
 
   @Post()

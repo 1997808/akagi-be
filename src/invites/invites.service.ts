@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { serverError } from '../utils/exception';
+import { getRandomToken } from '../utils/getRandomToken';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { UpdateInviteDto } from './dto/update-invite.dto';
 
@@ -9,8 +10,12 @@ export class InvitesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createInviteDto: CreateInviteDto) {
+    const token = getRandomToken(
+      createInviteDto.groupId,
+      createInviteDto.createdByMemberId,
+    );
     return await this.prisma.invite.create({
-      data: createInviteDto,
+      data: { ...createInviteDto, token, uses: createInviteDto.maxUses },
     });
   }
 
@@ -33,16 +38,28 @@ export class InvitesService {
     return await this.prisma.invite.delete({ where: { id } });
   }
 
-  async findAvailableByToken(token: string) {
-    const invite = await this.prisma.invite.findUnique({ where: { token } });
-    if (invite.uses === invite.maxUses || invite.uses > invite.maxUses) {
+  async findOneAvailableByGroupId(groupId: number) {
+    const invite = await this.prisma.invite.findFirst({
+      where: { groupId, uses: { gt: 0 } },
+    });
+    if (invite.uses < 1) {
       serverError('Invite token is expire');
     }
     return invite;
   }
 
-  async plusOneInviteUses(id: number) {
+  async findAvailableByToken(token: string) {
+    const invite = await this.prisma.invite.findFirst({
+      where: { token, uses: { gt: 0 } },
+    });
+    if (invite.uses < 1) {
+      serverError('Invite token is expire');
+    }
+    return invite;
+  }
+
+  async minusOneInviteUses(id: number) {
     const invite = await this.findOne(id);
-    return await this.update(id, { uses: invite.uses + 1 });
+    return await this.update(id, { uses: invite.uses - 1 });
   }
 }

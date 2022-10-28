@@ -11,7 +11,6 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { Socket, Server } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { serverError } from '../utils/exception';
-import { GroupType } from '@prisma/client';
 
 @WebSocketGateway({
   cors: {
@@ -86,6 +85,8 @@ export class GroupsGateway {
       socket.handshake.auth.token,
     );
     const group = await this.groupsService.joinGroupByinviteToken(user, token);
+    // todo add event member add
+    // this.server.to(`${group.id}`).emit('MEMBER_ADD', group);
     return this.server.to(`${user.id}`).emit('GROUP_CREATED', group);
   }
 }

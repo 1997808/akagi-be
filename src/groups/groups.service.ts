@@ -93,7 +93,7 @@ export class GroupsService {
   async joinGroupByinviteToken(user: User, token: string) {
     const invite = await this.invitesService.findAvailableByToken(token);
     await this.membersService.userJoinGroup(user, invite.groupId);
-    await this.invitesService.plusOneInviteUses(invite.id);
+    await this.invitesService.minusOneInviteUses(invite.id);
     return await this.findOne(invite.groupId);
   }
 }
