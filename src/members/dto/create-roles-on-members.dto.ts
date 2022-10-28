@@ -1,18 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty } from 'class-validator';
 
-export class UpdateInviteControllerDto {
+export class CreateRolesOnMembersDto {
   @ApiProperty()
   @IsNotEmpty()
-  id: number;
+  memberId: number;
 
   @ApiProperty()
   @IsNotEmpty()
-  uses: number;
-}
-
-export class UpdateInviteDto {
-  @ApiProperty()
-  @IsNotEmpty()
-  uses: number;
+  roleId: number;
 }

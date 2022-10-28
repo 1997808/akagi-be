@@ -7,6 +7,8 @@ import { ChannelsModule } from '../channels/channels.module';
 import { MembersModule } from '../members/members.module';
 import { AuthModule } from '../auth/auth.module';
 import { RolesModule } from '../roles/roles.module';
+import { RolesOnMembersModule } from '../roles-on-members/roles-on-members.module';
+import { InvitesModule } from '../invites/invites.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { RolesModule } from '../roles/roles.module';
     MembersModule,
     AuthModule,
     RolesModule,
+    RolesOnMembersModule,
+    InvitesModule,
   ],
   controllers: [GroupsController],
   providers: [GroupsGateway, GroupsService],

@@ -23,6 +23,12 @@ export class RolesService {
     return await this.prisma.role.findMany({ where: { groupId } });
   }
 
+  async findGroupDefaultEveryoneRoles(groupId: number) {
+    return await this.prisma.role.findFirst({
+      where: { groupId, name: '@everyone' },
+    });
+  }
+
   async update(id: number, updateRoleDto: UpdateRoleDto) {
     return await this.prisma.role.update({
       where: { id },

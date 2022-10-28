@@ -11,6 +11,7 @@ import { MembersModule } from './members/members.module';
 import { InvitesModule } from './invites/invites.module';
 import { MessagesModule } from './messages/messages.module';
 import { RolesModule } from './roles/roles.module';
+import { RolesOnMembersModule } from './roles-on-members/roles-on-members.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RolesModule } from './roles/roles.module';
     InvitesModule,
     MessagesModule,
     RolesModule,
+    RolesOnMembersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

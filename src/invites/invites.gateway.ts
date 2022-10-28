@@ -5,7 +5,7 @@ import {
 } from '@nestjs/websockets';
 import { InvitesService } from './invites.service';
 import { CreateInviteDto } from './dto/create-invite.dto';
-import { UpdateInviteDto } from './dto/update-invite.dto';
+import { UpdateInviteControllerDto } from './dto/update-invite.dto';
 
 @WebSocketGateway({
   cors: {
@@ -32,7 +32,7 @@ export class InvitesGateway {
   }
 
   @SubscribeMessage('updateInvite')
-  update(@MessageBody() updateInviteDto: UpdateInviteDto) {
+  update(@MessageBody() updateInviteDto: UpdateInviteControllerDto) {
     return this.invitesService.update(updateInviteDto.id, updateInviteDto);
   }
 

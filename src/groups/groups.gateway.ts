@@ -11,6 +11,7 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { Socket, Server } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { serverError } from '../utils/exception';
+import { GroupType } from '@prisma/client';
 
 @WebSocketGateway({
   cors: {
@@ -74,5 +75,17 @@ export class GroupsGateway {
   @SubscribeMessage('removeGroup')
   remove(@MessageBody() id: number) {
     return this.groupsService.remove(id);
+  }
+
+  @SubscribeMessage('joinGroupByinviteToken')
+  async joinGroupByinviteToken(
+    @MessageBody() token: string,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    const group = await this.groupsService.joinGroupByinviteToken(user, token);
+    return this.server.to(`${user.id}`).emit('GROUP_CREATED', group);
   }
 }

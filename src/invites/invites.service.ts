@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { serverError } from '../utils/exception';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { UpdateInviteDto } from './dto/update-invite.dto';
 
@@ -30,5 +31,18 @@ export class InvitesService {
 
   async remove(id: number) {
     return await this.prisma.invite.delete({ where: { id } });
+  }
+
+  async findAvailableByToken(token: string) {
+    const invite = await this.prisma.invite.findUnique({ where: { token } });
+    if (invite.uses === invite.maxUses || invite.uses > invite.maxUses) {
+      serverError('Invite token is expire');
+    }
+    return invite;
+  }
+
+  async plusOneInviteUses(id: number) {
+    const invite = await this.findOne(id);
+    return await this.update(id, { uses: invite.uses + 1 });
   }
 }
