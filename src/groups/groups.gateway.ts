@@ -6,7 +6,10 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { GroupsService } from './groups.service';
-import { CreateGroupDto } from './dto/create-group.dto';
+import {
+  CreateGroupDto,
+  JoinGroupByinviteTokenProps,
+} from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { Socket, Server } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
@@ -78,13 +81,16 @@ export class GroupsGateway {
 
   @SubscribeMessage('joinGroupByinviteToken')
   async joinGroupByinviteToken(
-    @MessageBody() token: string,
+    @MessageBody() data: JoinGroupByinviteTokenProps,
     @ConnectedSocket() socket: Socket,
   ) {
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
-    const group = await this.groupsService.joinGroupByinviteToken(user, token);
+    const group = await this.groupsService.joinGroupByinviteToken(
+      user,
+      data.token,
+    );
     // todo add event member add
     // this.server.to(`${group.id}`).emit('MEMBER_ADD', group);
     return this.server.to(`${user.id}`).emit('GROUP_CREATED', group);

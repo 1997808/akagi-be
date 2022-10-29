@@ -23,3 +23,9 @@ export class CreateGroupDto {
   @IsOptional()
   memberOwnerId?: number;
 }
+
+export class JoinGroupByinviteTokenProps {
+  @ApiProperty()
+  @IsNotEmpty()
+  token: string;
+}
