@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RolesOnMembersService } from '../roles-on-members/roles-on-members.service';
 import { RolesService } from '../roles/roles.service';
 import { serverError } from '../utils/exception';
-import { CreateGroupDto } from './dto/create-group.dto';
+import { CreateDirectGroupDto, CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 
 @Injectable()
@@ -24,7 +24,7 @@ export class GroupsService {
   async create(user: User, createGroupDto: CreateGroupDto) {
     const group = await this.prisma.group.create({ data: createGroupDto });
 
-    const role = await this.rolesService.create({
+    await this.rolesService.create({
       name: '@everyone',
       permissions: [],
       groupId: group.id,
@@ -36,15 +36,7 @@ export class GroupsService {
       groupId: group.id,
     });
 
-    const member = await this.membersService.create({
-      userId: user.id,
-      groupId: group.id,
-    });
-
-    await this.rolesOnMembersService.create({
-      memberId: member.id,
-      roleId: role.id,
-    });
+    const member = await this.membersService.userJoinGroup(user, group.id);
 
     if (createGroupDto.type === GroupType.GROUP) {
       createGroupDto.memberOwnerId = member.id;
@@ -57,9 +49,37 @@ export class GroupsService {
     return group;
   }
 
+  async createDirectMessage(
+    user1: User,
+    user2: User,
+    createGroupDto: CreateDirectGroupDto,
+  ) {
+    const group = await this.prisma.group.create({ data: createGroupDto });
+
+    await this.rolesService.create({
+      name: '@everyone',
+      permissions: [],
+      groupId: group.id,
+    });
+
+    await this.channelsService.create({
+      name: 'general',
+      type: 'TEXT',
+      groupId: group.id,
+    });
+
+    await this.membersService.userJoinGroup(user1, group.id);
+    await this.membersService.userJoinGroup(user2, group.id);
+
+    return group;
+  }
+
   async findAll(userId: number) {
     return await this.membersService.findAllGroupUserIn(userId);
-    // return await this.prisma.group.findMany();
+  }
+
+  async findAllDirect(userId: number) {
+    return await this.membersService.findAllDirectGroupUserIn(userId);
   }
 
   async findOneSimple(id: number) {

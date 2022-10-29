@@ -75,8 +75,9 @@ export class GroupsGateway {
   }
 
   @SubscribeMessage('removeGroup')
-  remove(@MessageBody() id: number) {
-    return this.groupsService.remove(id);
+  async remove(@MessageBody() id: number) {
+    await this.groupsService.remove(id);
+    return this.server.to(`GROUP-${id}`).emit('GROUP_DELETED', id);
   }
 
   @SubscribeMessage('joinGroupByinviteToken')

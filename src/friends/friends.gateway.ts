@@ -63,6 +63,12 @@ export class FriendsGateway {
     this.server
       .to(`${friendRequests.userGetRequest.userId}`)
       .emit(`UPDATE_FRIEND`, friendRequests.userGetRequest);
+    this.server
+      .to(`${friendRequests.userSendRequest.userId}`)
+      .emit('GROUP_CREATED', friendRequests.group);
+    this.server
+      .to(`${friendRequests.userGetRequest.userId}`)
+      .emit('GROUP_CREATED', friendRequests.group);
   }
 
   @SubscribeMessage('removeFriendRequest')

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { GroupType, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RolesOnMembersService } from '../roles-on-members/roles-on-members.service';
 import { RolesService } from '../roles/roles.service';
@@ -43,7 +43,20 @@ export class MembersService {
       select: { group: true },
       orderBy: { group: { name: 'asc' } },
     });
-    return result.map((item) => item.group);
+    return result
+      .filter((item) => item.group.type === GroupType.GROUP)
+      .map((item) => item.group);
+  }
+
+  async findAllDirectGroupUserIn(userId: number) {
+    const result = await this.prisma.member.findMany({
+      where: { userId },
+      select: { group: { include: { members: { select: { user: true } } } } },
+      orderBy: { group: { createdAt: 'desc' } },
+    });
+    return result
+      .filter((item) => item.group.type === GroupType.DIRECT)
+      .map((item) => item.group);
   }
 
   async isUserGroupMember(userId: number, groupId: number) {

@@ -28,20 +28,20 @@ model Friendship {
   id        Int      @id @default(autoincrement())
   type      Int
   userId    Int
-  user      User     @relation(name: "user", fields: [userId], references: [id])
+  user      User     @relation(name: "user", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   friendId  Int
-  friend    User     @relation(name: "friend", fields: [friendId], references: [id])
+  friend    User     @relation(name: "friend", fields: [friendId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt DateTime @default(now())
 }
 
 model Group {
   id            Int       @id @default(autoincrement())
-  name          String
+  name          String?   @default("Default")
   iconURL       String?
   type          GroupType @default(GROUP)
   isPublic      Boolean   @default(false)
   memberOwnerId Int?      @unique
-  memberOwner   Member?   @relation(name: "owner", fields: [memberOwnerId], references: [id])
+  memberOwner   Member?   @relation(name: "owner", fields: [memberOwnerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   channels      Channel[]
   members       Member[]  @relation(name: "groupMember")
   roles         Role[]
@@ -52,9 +52,9 @@ model Group {
 model Member {
   id         Int              @id @default(autoincrement())
   userId     Int
-  user       User             @relation(fields: [userId], references: [id])
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   groupId    Int
-  group      Group            @relation(name: "groupMember", fields: [groupId], references: [id])
+  group      Group            @relation(name: "groupMember", fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   groupOwner Group?           @relation(name: "owner")
   messages   Message[]
   roles      RolesOnMembers[]
@@ -67,15 +67,15 @@ model Role {
   name        String
   permissions Int[]            @default([])
   groupId     Int
-  group       Group            @relation(fields: [groupId], references: [id])
+  group       Group            @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   members     RolesOnMembers[]
   createdAt   DateTime         @default(now())
 }
 
 model RolesOnMembers {
-  member     Member   @relation(fields: [memberId], references: [id])
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   memberId   Int
-  role       Role     @relation(fields: [roleId], references: [id])
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   roleId     Int
   assignedAt DateTime @default(now())
   // assignedBy String
@@ -92,7 +92,7 @@ model Channel {
   type           ChannelType @default(TEXT)
   description    String?
   groupId        Int
-  group          Group       @relation(fields: [groupId], references: [id])
+  group          Group       @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   messages       Message[]
   createdAt      DateTime    @default(now())
 }
@@ -102,9 +102,9 @@ model Message {
   content   String?
   image     String?
   channelId Int
-  channel   Channel  @relation(fields: [channelId], references: [id])
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   memberId  Int
-  member    Member   @relation(fields: [memberId], references: [id])
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -115,10 +115,10 @@ model Invite {
   maxUses           Int      @default(1)
   token             String   @unique
   createdByMemberId Int
-  createdByMember   Member   @relation(fields: [createdByMemberId], references: [id])
+  createdByMember   Member   @relation(fields: [createdByMemberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   // expireDate DateTime
   groupId           Int
-  group             Group    @relation(fields: [groupId], references: [id])
+  group             Group    @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt         DateTime @default(now())
 }
 

@@ -13,9 +13,14 @@ import { CreateGroupDto } from './dto/create-group.dto';
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
 
-  @Get()
+  @Get('group')
   async findAllGroupByUser(@AuthUser() user: User) {
     return await this.groupsService.findAll(user.id);
+  }
+
+  @Get('direct')
+  async findAllDirectGroupByUser(@AuthUser() user: User) {
+    return await this.groupsService.findAllDirect(user.id);
   }
 
   @Get(':id')

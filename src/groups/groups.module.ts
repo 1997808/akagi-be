@@ -22,5 +22,6 @@ import { InvitesModule } from '../invites/invites.module';
   ],
   controllers: [GroupsController],
   providers: [GroupsGateway, GroupsService],
+  exports: [GroupsService],
 })
 export class GroupsModule {}

@@ -24,6 +24,12 @@ export class CreateGroupDto {
   memberOwnerId?: number;
 }
 
+export class CreateDirectGroupDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  type: GroupType;
+}
+
 export class JoinGroupByinviteTokenProps {
   @ApiProperty()
   @IsNotEmpty()

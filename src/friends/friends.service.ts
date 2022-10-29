@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { Friendship, GroupType, User } from '@prisma/client';
+import { GroupsService } from '../groups/groups.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { serverError } from '../utils/exception';
@@ -12,6 +13,7 @@ export class FriendsService {
   constructor(
     private prisma: PrismaService,
     private usersService: UsersService,
+    private groupsService: GroupsService,
   ) {}
 
   async sendFriendRequest(user: User, createFriendDto: CreateFriendDto) {
@@ -69,7 +71,6 @@ export class FriendsService {
         include: { friend: true },
       });
     }
-    // todo: ws sendFriendRequest to receiver
     return { userSendRequest, userGetRequest };
   }
 
@@ -81,9 +82,6 @@ export class FriendsService {
     if (user.id !== friendship.userId) {
       serverError(`No authority`);
     }
-    const userSendRequest = await this.update(id, {
-      type: FriendshipEnum.FRIEND,
-    });
     const friendshipInvert = await this.findOneByUserIdAndFriendId(
       friendship.friendId,
       friendship.userId,
@@ -91,11 +89,20 @@ export class FriendsService {
     if (!friendshipInvert) {
       serverError(`No friend data found`);
     }
+    const userSendRequest = await this.update(id, {
+      type: FriendshipEnum.FRIEND,
+    });
     const userGetRequest = await this.update(friendshipInvert.id, {
       type: FriendshipEnum.FRIEND,
     });
-    // todo: ws send friend to homepage to receiver
-    return { userSendRequest, userGetRequest };
+    const direct = await this.groupsService.createDirectMessage(
+      userSendRequest.user,
+      userSendRequest.friend,
+      { type: GroupType.DIRECT },
+    );
+    const group = await this.groupsService.findOne(direct.id);
+
+    return { userSendRequest, userGetRequest, group };
   }
 
   async removeFriendRequest(user: User, updateFriendDto: UpdateFriendDto) {
@@ -140,21 +147,6 @@ export class FriendsService {
     return friends;
   }
 
-  // async findAllUserFriend(user: User) {
-  //   const friend = await this.prisma.friendship.findMany({
-  //     where: { user, type: FriendshipEnum.FRIEND },
-  //     include: { friend: true },
-  //   });
-  //   const friendRequest = await this.prisma.friendship.findMany({
-  //     where: { user, type: FriendshipEnum.OUTGOING || FriendshipEnum.INCOMING },
-  //     include: { friend: true },
-  //   });
-  //   return {
-  //     friends,
-  //     friendRequests,
-  //   };
-  // }
-
   async findOne(id: number) {
     return await this.prisma.friendship.findUnique({ where: { id } });
   }
@@ -163,7 +155,7 @@ export class FriendsService {
     return await this.prisma.friendship.update({
       where: { id },
       data: updateFriendDto,
-      include: { friend: true },
+      include: { user: true, friend: true },
     });
   }
 
