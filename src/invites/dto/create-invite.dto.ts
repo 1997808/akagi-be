@@ -12,7 +12,7 @@ export class CreateInviteDto {
 
   @ApiProperty()
   @IsOptional()
-  token: string;
+  token?: string;
 
   @ApiProperty()
   @IsNotEmpty()

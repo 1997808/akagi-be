@@ -14,11 +14,11 @@ export class InvitesController {
   constructor(private readonly invitesService: InvitesService) {}
 
   @Get('group/:groupId')
-  async findOneAvailableByGroupId(
+  async findAvailableByGroupId(
     @AuthUser() user: User,
     @Param('groupId') groupId: string,
   ) {
-    return await this.invitesService.findOneAvailableByGroupId(+groupId);
+    return await this.invitesService.findAvailableByGroupId(+groupId);
   }
 
   @Post()

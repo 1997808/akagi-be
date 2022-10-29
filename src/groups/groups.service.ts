@@ -6,6 +6,7 @@ import { MembersService } from '../members/members.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RolesOnMembersService } from '../roles-on-members/roles-on-members.service';
 import { RolesService } from '../roles/roles.service';
+import { serverError } from '../utils/exception';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 
@@ -61,6 +62,12 @@ export class GroupsService {
     // return await this.prisma.group.findMany();
   }
 
+  async findOneSimple(id: number) {
+    return await this.prisma.group.findUnique({
+      where: { id },
+    });
+  }
+
   async findOne(id: number) {
     return await this.prisma.group.findUnique({
       where: { id },
@@ -88,6 +95,35 @@ export class GroupsService {
     const members = await this.membersService.findGroupMembers(id);
     const roles = await this.rolesService.findGroupRoles(id);
     return { channels, members, roles };
+  }
+
+  async findAvailableInviteByGroupId(user: User, groupId: number) {
+    const member = await this.membersService.isUserGroupMember(
+      user.id,
+      groupId,
+    );
+    if (!member) {
+      serverError('User not member');
+    }
+
+    const invites = await this.invitesService.findAvailableByGroupId(groupId);
+    if (invites.length > 0) {
+      return invites[0];
+    }
+
+    if (await this.isMemberOwnerOfGroup(member.id, groupId)) {
+      return await this.invitesService.create({
+        maxUses: 10,
+        createdByMemberId: member.id,
+        groupId,
+      });
+    }
+    return null;
+  }
+
+  async isMemberOwnerOfGroup(memberId: number, groupId: number) {
+    const group = await this.findOneSimple(groupId);
+    return group.memberOwnerId === memberId;
   }
 
   async joinGroupByinviteToken(user: User, token: string) {

@@ -19,7 +19,7 @@ export class MembersService {
   // todo add default roles for member
   async create(createMemberDto: CreateMemberDto) {
     if (
-      !(await this.isUserGroupMember(
+      !!(await this.isUserGroupMember(
         createMemberDto.userId,
         createMemberDto.groupId,
       ))

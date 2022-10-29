@@ -23,6 +23,17 @@ export class GroupsController {
     return await this.groupsService.findOne(+id);
   }
 
+  @Get('invite/:groupId')
+  async findAvailableInviteByGroupId(
+    @AuthUser() user: User,
+    @Param('groupId') groupId: string,
+  ) {
+    return await this.groupsService.findAvailableInviteByGroupId(
+      user,
+      +groupId,
+    );
+  }
+
   @Post()
   async create(@AuthUser() user: User, @Body() createGroupDto: CreateGroupDto) {
     return await this.groupsService.create(user, createGroupDto);

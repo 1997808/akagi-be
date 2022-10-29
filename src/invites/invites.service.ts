@@ -38,13 +38,10 @@ export class InvitesService {
     return await this.prisma.invite.delete({ where: { id } });
   }
 
-  async findOneAvailableByGroupId(groupId: number) {
-    const invite = await this.prisma.invite.findFirst({
+  async findAvailableByGroupId(groupId: number) {
+    const invite = await this.prisma.invite.findMany({
       where: { groupId, uses: { gt: 0 } },
     });
-    if (invite.uses < 1) {
-      serverError('Invite token is expire');
-    }
     return invite;
   }
 
