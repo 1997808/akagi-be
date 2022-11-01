@@ -23,6 +23,6 @@ export class MessagesController {
     @AuthUser() user: User,
     @Body() createMessageDto: CreateMessageDto,
   ) {
-    return await this.messagesService.create(createMessageDto);
+    return await this.messagesService.create(user, createMessageDto);
   }
 }

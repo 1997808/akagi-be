@@ -18,7 +18,7 @@ export class UpdateMessageDto {
   @IsNotEmpty()
   channelId: number;
 
-  @ApiProperty()
-  @IsNotEmpty()
-  memberId: number;
+  // @ApiProperty()
+  // @IsNotEmpty()
+  // memberId: number;
 }

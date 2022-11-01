@@ -11,6 +11,8 @@ import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
 import { AuthService } from '../auth/auth.service';
 import { serverError } from '../utils/exception';
+import { JoinActiveChannelDto } from './entities/channel.entity';
+import { deleteSocketRooms } from '../utils/socketUtil';
 
 @WebSocketGateway({
   cors: {
@@ -24,22 +26,6 @@ export class ChannelsGateway {
     private readonly authService: AuthService,
   ) {}
   @WebSocketServer() server: Server;
-
-  @SubscribeMessage('listenChannel')
-  async listenChannel(
-    @MessageBody() id: number,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    const user = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
-    const channel = await this.channelsService.findOne(id);
-    if (!channel) {
-      serverError(`Can not find channel`);
-    }
-    await socket.join(`CHANNEL-${channel.id}`);
-    return this.server.to(`${user.id}`).emit('JOIN_CHANNEL_READY');
-  }
 
   @SubscribeMessage('createChannel')
   async create(
@@ -74,5 +60,23 @@ export class ChannelsGateway {
   @SubscribeMessage('removeChannel')
   remove(@MessageBody() id: number) {
     return this.channelsService.remove(id);
+  }
+
+  @SubscribeMessage('joinChannel')
+  async joinChannel(
+    @MessageBody() joinActiveChannelDto: JoinActiveChannelDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { id } = joinActiveChannelDto;
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    const channel = await this.channelsService.findOne(id);
+    if (!channel) {
+      serverError(`Can not find channel`);
+    }
+    deleteSocketRooms(socket, 'CHANNEL_ACTIVE');
+    await socket.join(`CHANNEL_ACTIVE_${channel.id}`);
+    return this.server.to(`${user.id}`).emit('JOIN_CHANNEL');
   }
 }

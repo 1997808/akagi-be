@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
@@ -7,12 +8,35 @@ import { UpdateMessageDto } from './dto/update-message.dto';
 export class MessagesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createMessageDto: CreateMessageDto) {
-    return await this.prisma.message.create({ data: createMessageDto });
+  async create(user: User, createMessageDto: CreateMessageDto) {
+    const { content, image, groupId, channelId } = createMessageDto;
+    const channel = await this.prisma.channel.findUnique({
+      where: { id: channelId },
+    });
+    const member = await this.prisma.member.findFirst({
+      where: { groupId, userId: user.id },
+    });
+    return await this.prisma.message.create({
+      data: {
+        content: content,
+        channel: {
+          connect: {
+            id: channel.id,
+          },
+        },
+        member: {
+          connect: {
+            id: member.id,
+          },
+        },
+      },
+    });
   }
 
   async findAll() {
-    return await this.prisma.message.findMany();
+    return await this.prisma.message.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   async findOne(id: number) {

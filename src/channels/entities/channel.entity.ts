@@ -1,5 +1,6 @@
 import { Channel, ChannelType } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional } from 'class-validator';
 
 export class ChannelEntity implements Channel {
   @ApiProperty()
@@ -25,4 +26,10 @@ export class ChannelEntity implements Channel {
 
   @ApiProperty()
   createdAt: Date;
+}
+
+export class JoinActiveChannelDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  id: number;
 }

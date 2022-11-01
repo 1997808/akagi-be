@@ -12,9 +12,13 @@ export class CreateMessageDto {
 
   @ApiProperty()
   @IsNotEmpty()
-  channelId: number;
+  groupId: number;
 
   @ApiProperty()
   @IsNotEmpty()
-  memberId: number;
+  channelId: number;
+
+  // @ApiProperty()
+  // @IsNotEmpty()
+  // memberId: number;
 }
