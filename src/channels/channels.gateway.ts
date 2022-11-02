@@ -12,7 +12,7 @@ import { UpdateChannelDto } from './dto/update-channel.dto';
 import { AuthService } from '../auth/auth.service';
 import { serverError } from '../utils/exception';
 import { JoinActiveChannelDto } from './entities/channel.entity';
-import { deleteSocketRooms } from '../utils/socketUtil';
+import { checkHasSocketRoom, deleteSocketRooms } from '../utils/socketUtil';
 
 @WebSocketGateway({
   cors: {
@@ -68,6 +68,10 @@ export class ChannelsGateway {
     @ConnectedSocket() socket: Socket,
   ) {
     const { id } = joinActiveChannelDto;
+    if (checkHasSocketRoom(socket, `CHANNEL_ACTIVE_${id}`)) {
+      console.log(id);
+      return;
+    }
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );

@@ -8,6 +8,10 @@ export function deleteSocketRooms(socket: Socket, text: string) {
   });
 }
 
+export function checkHasSocketRoom(socket: Socket, text: string) {
+  return socket.rooms.has(text);
+}
+
 export function deleteExactSocketRoom(socket: Socket, text: string) {
   socket.rooms.delete(text);
 }
