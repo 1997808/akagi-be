@@ -4,7 +4,7 @@ import { ChannelsService } from '../channels/channels.service';
 import { InvitesService } from '../invites/invites.service';
 import { MembersService } from '../members/members.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { RolesOnMembersService } from '../roles-on-members/roles-on-members.service';
+// import { RolesOnMembersService } from '../roles-on-members/roles-on-members.service';
 import { RolesService } from '../roles/roles.service';
 import { serverError } from '../utils/exception';
 import { CreateDirectGroupDto, CreateGroupDto } from './dto/create-group.dto';
@@ -17,7 +17,7 @@ export class GroupsService {
     private channelsService: ChannelsService,
     private membersService: MembersService,
     private rolesService: RolesService,
-    private rolesOnMembersService: RolesOnMembersService,
+    // private rolesOnMembersService: RolesOnMembersService,
     private invitesService: InvitesService,
   ) {}
 

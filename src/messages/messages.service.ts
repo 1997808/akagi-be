@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
+import { ChannelsService } from '../channels/channels.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private channelsService: ChannelsService,
+  ) {}
 
   async create(user: User, createMessageDto: CreateMessageDto) {
     const { content, image, groupId, channelId } = createMessageDto;
@@ -16,7 +20,7 @@ export class MessagesService {
     const member = await this.prisma.member.findFirst({
       where: { groupId, userId: user.id },
     });
-    return await this.prisma.message.create({
+    const message = await this.prisma.message.create({
       data: {
         content: content,
         channel: {
@@ -30,6 +34,30 @@ export class MessagesService {
           },
         },
       },
+    });
+    this.channelsService.update(channel.id, { lastMessageId: message.id });
+    return message;
+  }
+
+  async findByChannelFromLastMessageId(channelId: number, lastId: number) {
+    return await this.prisma.message.findMany({
+      skip: 0,
+      take: 10,
+      cursor: { id: lastId },
+      where: { channelId },
+      include: {
+        member: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { id: 'desc' },
     });
   }
 

@@ -69,7 +69,6 @@ export class ChannelsGateway {
   ) {
     const { id } = joinActiveChannelDto;
     if (checkHasSocketRoom(socket, `CHANNEL_ACTIVE_${id}`)) {
-      console.log(id);
       return;
     }
     const user = await this.authService.getUserFromToken(

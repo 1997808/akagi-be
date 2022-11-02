@@ -1,6 +1,6 @@
 import { Channel, ChannelType } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import { IsNotEmpty } from 'class-validator';
 
 export class ChannelEntity implements Channel {
   @ApiProperty()

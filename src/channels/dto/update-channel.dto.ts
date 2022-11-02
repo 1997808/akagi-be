@@ -4,25 +4,25 @@ import { IsOptional } from 'class-validator';
 export class UpdateChannelDto {
   @ApiProperty()
   @IsOptional()
-  id: number;
+  id?: number;
 
   @ApiProperty()
   @IsOptional()
-  name: string;
+  name?: string;
 
-  // type: ChannelType;
-
-  @ApiProperty()
-  @IsOptional()
-  firstMessageId: number;
+  // type?: ChannelType;
 
   @ApiProperty()
   @IsOptional()
-  lastMessageId: number;
+  firstMessageId?: number;
 
   @ApiProperty()
   @IsOptional()
-  description: string;
+  lastMessageId?: number;
 
-  // groupId: number;
+  @ApiProperty()
+  @IsOptional()
+  description?: string;
+
+  // groupId?: number;
 }
