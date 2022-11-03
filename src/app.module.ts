@@ -12,9 +12,15 @@ import { InvitesModule } from './invites/invites.module';
 import { MessagesModule } from './messages/messages.module';
 import { RolesModule } from './roles/roles.module';
 import { RolesOnMembersModule } from './roles-on-members/roles-on-members.module';
+import { FilesModule } from './files/files.module';
+import { MulterModule } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
 @Module({
   imports: [
+    MulterModule.register({
+      storage: memoryStorage(),
+    }),
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -26,6 +32,7 @@ import { RolesOnMembersModule } from './roles-on-members/roles-on-members.module
     MessagesModule,
     RolesModule,
     RolesOnMembersModule,
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
