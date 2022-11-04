@@ -6,15 +6,32 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilesService } from './files.service';
-import { SharpPipe } from './sharp.pipe';
+import { SharpIconPipe, SharpPipe } from './sharp.pipe';
 
 @Controller('files')
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
-  @Post()
+  // @Post()
+  // @UseInterceptors(FileInterceptor('file'))
+  // uploadFile(@UploadedFile(SharpPipe) file: Express.Multer.File) {
+  //   console.log(file);
+  // }
+
+  @Post('image')
   @UseInterceptors(FileInterceptor('image'))
-  uploadImage(@UploadedFile(SharpPipe) image: Express.Multer.File) {
-    console.log(image);
+  async uploadImage(@UploadedFile(SharpPipe) image: Buffer) {
+    return await (
+      await this.filesService.uploadBufferImage(image)
+    ).public_id;
+  }
+
+  @Post('icon')
+  @UseInterceptors(FileInterceptor('icon'))
+  async uploadIcon(@UploadedFile(SharpIconPipe) icon: Buffer) {
+    return await (
+      await this.filesService.uploadBufferImage(icon)
+    ).public_id;
+    // return await this.filesService.uploadBufferImage(icon);
   }
 }
