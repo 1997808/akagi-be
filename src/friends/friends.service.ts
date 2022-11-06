@@ -142,7 +142,7 @@ export class FriendsService {
   async findAllUserFriend(user: User) {
     const friends = await this.prisma.friendship.findMany({
       where: { user, type: { not: FriendshipEnum.CANCEL } },
-      include: { friend: true },
+      include: { user: true, friend: true },
     });
     return friends;
   }

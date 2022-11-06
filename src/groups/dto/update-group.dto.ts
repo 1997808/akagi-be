@@ -8,15 +8,15 @@ export class UpdateGroupDto {
 
   @ApiProperty()
   @IsOptional()
-  name: string;
+  name?: string;
 
   @ApiProperty()
   @IsOptional()
-  iconURL: string;
+  iconURL?: string;
 
   @ApiProperty()
   @IsOptional()
-  isPublic: boolean; //cant change if type DIRECT
+  isPublic?: boolean; //cant change if type DIRECT
 
   @ApiProperty()
   @IsOptional()

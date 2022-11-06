@@ -15,6 +15,7 @@ model User {
   email       String       @unique
   username    String
   password    String
+  avatar      String?
   verifyToken String?
   verify      Boolean      @default(false)
   userFriends Friendship[] @relation(name: "user")

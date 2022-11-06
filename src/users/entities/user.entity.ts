@@ -15,6 +15,9 @@ export class UserEntity implements User {
   password: string;
 
   @ApiProperty()
+  avatar: string;
+
+  @ApiProperty()
   verifyToken: string;
 
   @ApiProperty()

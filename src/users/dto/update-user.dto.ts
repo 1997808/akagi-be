@@ -16,6 +16,10 @@ export class UpdateUserDto {
 
   @ApiProperty()
   @IsOptional()
+  avatar?: string;
+
+  @ApiProperty()
+  @IsOptional()
   verify?: boolean;
 
   @ApiProperty()

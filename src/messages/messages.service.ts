@@ -34,6 +34,19 @@ export class MessagesService {
           },
         },
       },
+      include: {
+        member: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
     });
     this.channelsService.update(channel.id, { lastMessageId: message.id });
     return message;
@@ -52,6 +65,7 @@ export class MessagesService {
               select: {
                 id: true,
                 username: true,
+                avatar: true,
               },
             },
           },
