@@ -27,11 +27,11 @@ export class CreateGroupDto {
 export class CreateDirectGroupDto {
   @ApiProperty()
   @IsNotEmpty()
-  type: GroupType;
+  type!: GroupType;
 }
 
 export class JoinGroupByinviteTokenProps {
   @ApiProperty()
   @IsNotEmpty()
-  token: string;
+  token!: string;
 }

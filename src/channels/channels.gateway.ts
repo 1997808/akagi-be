@@ -13,6 +13,7 @@ import { AuthService } from '../auth/auth.service';
 import { serverError } from '../utils/exception';
 import { JoinActiveChannelDto } from './entities/channel.entity';
 import { checkHasSocketRoom, deleteSocketRooms } from '../utils/socketUtil';
+import { ChannelType } from '@prisma/client';
 
 @WebSocketGateway({
   cors: {
@@ -81,5 +82,27 @@ export class ChannelsGateway {
     deleteSocketRooms(socket, 'CHANNEL_ACTIVE');
     await socket.join(`CHANNEL_ACTIVE_${channel.id}`);
     return this.server.to(`${user.id}`).emit('JOIN_CHANNEL');
+  }
+
+  @SubscribeMessage('joinVoiceChannel')
+  async joinVoiceChannel(
+    @MessageBody() joinActiveChannelDto: JoinActiveChannelDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { id } = joinActiveChannelDto;
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    const channel = await this.channelsService.findOne(id);
+    if (!channel) {
+      serverError(`Can not find channel`);
+    }
+    if (channel.type !== ChannelType.VOICE) {
+      serverError(`Can not find channel`);
+    }
+    await socket.join(`CHANNEL_VOICE_${channel.id}`);
+    return socket.broadcast
+      .to(`CHANNEL_VOICE_${channel.id}`)
+      .emit(`CHANNEL_VOICE_JOINED`, user.id);
   }
 }
