@@ -33,3 +33,13 @@ export class JoinActiveChannelDto {
   @IsNotEmpty()
   id: number;
 }
+
+export class JoinVoiceChannelDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  id: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  pid: string;
+}

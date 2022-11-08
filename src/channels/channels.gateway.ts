@@ -11,7 +11,10 @@ import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
 import { AuthService } from '../auth/auth.service';
 import { serverError } from '../utils/exception';
-import { JoinActiveChannelDto } from './entities/channel.entity';
+import {
+  JoinActiveChannelDto,
+  JoinVoiceChannelDto,
+} from './entities/channel.entity';
 import { checkHasSocketRoom, deleteSocketRooms } from '../utils/socketUtil';
 import { ChannelType } from '@prisma/client';
 
@@ -86,10 +89,14 @@ export class ChannelsGateway {
 
   @SubscribeMessage('joinVoiceChannel')
   async joinVoiceChannel(
-    @MessageBody() joinActiveChannelDto: JoinActiveChannelDto,
+    @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { id } = joinActiveChannelDto;
+    const { id, pid } = joinVoiceChannelDto;
+
+    if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
+      return;
+    }
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
@@ -103,6 +110,6 @@ export class ChannelsGateway {
     await socket.join(`CHANNEL_VOICE_${channel.id}`);
     return socket.broadcast
       .to(`CHANNEL_VOICE_${channel.id}`)
-      .emit(`CHANNEL_VOICE_JOINED`, user.id);
+      .emit(`CHANNEL_VOICE_JOINED`, { user: user, peer: pid });
   }
 }
