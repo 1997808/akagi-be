@@ -205,16 +205,13 @@ export class ChannelsGateway {
       this.users[id] = [socket.id];
     }
     this.socketToRoom[socket.id] = id;
-    console.log('id of this ', socket.id);
     const usersInThisRoom = this.users[id].filter((id: string) => {
-      console.log(id !== socket.id, id, socket.id);
       return id !== socket.id;
     });
 
-    console.log(this.users, usersInThisRoom);
-    return this.server
-      .to(`CHANNEL_VOICE_${id}`)
-      .emit(`ALL_USERS`, usersInThisRoom);
+    console.log(usersInThisRoom);
+    return this.server.to(`${socket.id}`).emit(`ALL_USERS`, usersInThisRoom);
+    // .to(`CHANNEL_VOICE_${id}`)
   }
 
   @SubscribeMessage('sendingSignal')
@@ -242,6 +239,19 @@ export class ChannelsGateway {
       .to(`${callerID}`)
       .emit(`RECEIVE_RETURN_SIGNAL`, { signal, id: socket.id });
   }
+
+  // @SubscribeMessage('disconnectVoiceChannel')
+  // async disconnectVoiceChannel(
+  //   @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
+  //   @ConnectedSocket() socket: Socket,
+  // ) {
+  //   const { id, pid } = joinVoiceChannelDto;
+  //   console.log(id, pid, 'userDisconnected');
+
+  //   return socket.broadcast
+  //     .to(`CHANNEL_VOICE_${id}`)
+  //     .emit(`USER_DISCONNECTED`, pid);
+  // }
 
   //   socket.on('disconnect', () => {
   //     const roomID = socketToRoom[socket.id];
