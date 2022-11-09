@@ -15,6 +15,7 @@ import {
   DisplayMediaDto,
   JoinActiveChannelDto,
   JoinVoiceChannelDto,
+  SendingSignalDto,
 } from './entities/channel.entity';
 import { checkHasSocketRoom, deleteSocketRooms } from '../utils/socketUtil';
 import { ChannelType } from '@prisma/client';
@@ -26,6 +27,8 @@ import { ChannelType } from '@prisma/client';
   namespace: '/',
 })
 export class ChannelsGateway {
+  users = {};
+  socketToRoom = {};
   constructor(
     private readonly channelsService: ChannelsService,
     private readonly authService: AuthService,
@@ -88,32 +91,32 @@ export class ChannelsGateway {
     return this.server.to(`${user.id}`).emit('JOIN_CHANNEL');
   }
 
-  @SubscribeMessage('joinVoiceChannel')
-  async joinVoiceChannel(
-    @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    const { id, pid } = joinVoiceChannelDto;
+  // @SubscribeMessage('joinVoiceChannel')
+  // async joinVoiceChannel(
+  //   @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
+  //   @ConnectedSocket() socket: Socket,
+  // ) {
+  //   const { id, pid } = joinVoiceChannelDto;
 
-    console.log(id, pid, 'join');
-    if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
-      return;
-    }
-    const user = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
-    const channel = await this.channelsService.findOne(id);
-    if (!channel) {
-      serverError(`Can not find channel`);
-    }
-    if (channel.type !== ChannelType.VOICE) {
-      serverError(`Can not find channel`);
-    }
-    await socket.join(`CHANNEL_VOICE_${channel.id}`);
-    return socket.broadcast
-      .to(`CHANNEL_VOICE_${channel.id}`)
-      .emit(`CHANNEL_VOICE_JOINED`, { user: user, pid });
-  }
+  //   console.log(id, pid, 'join');
+  //   if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
+  //     return;
+  //   }
+  //   const user = await this.authService.getUserFromToken(
+  //     socket.handshake.auth.token,
+  //   );
+  //   const channel = await this.channelsService.findOne(id);
+  //   if (!channel) {
+  //     serverError(`Can not find channel`);
+  //   }
+  //   if (channel.type !== ChannelType.VOICE) {
+  //     serverError(`Can not find channel`);
+  //   }
+  //   await socket.join(`CHANNEL_VOICE_${channel.id}`);
+  //   return socket.broadcast
+  //     .to(`CHANNEL_VOICE_${channel.id}`)
+  //     .emit(`CHANNEL_VOICE_JOINED`, { user: user, pid });
+  // }
 
   @SubscribeMessage('displayMedia')
   async displayMedia(
@@ -122,9 +125,6 @@ export class ChannelsGateway {
   ) {
     const { id, pid, value } = displayMediaDto;
     console.log(id, pid, value, 'displayMedia');
-    if (!checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
-      return;
-    }
     return socket.broadcast
       .to(`CHANNEL_VOICE_${id}`)
       .emit(`DISPLAY_MEDIA`, { pid, value });
@@ -137,10 +137,6 @@ export class ChannelsGateway {
   ) {
     const { id, pid } = joinVoiceChannelDto;
     console.log(id, pid, 'userVideoOff');
-
-    if (!checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
-      return;
-    }
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
@@ -161,4 +157,98 @@ export class ChannelsGateway {
       .to(`CHANNEL_VOICE_${id}`)
       .emit(`USER_DISCONNECTED`, pid);
   }
+
+  @SubscribeMessage('joinVoiceChannel')
+  async joinVoiceChannel(
+    @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { id } = joinVoiceChannelDto;
+
+    if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
+      return;
+    }
+    const channel = await this.channelsService.findOne(id);
+    if (!channel) {
+      serverError(`Can not find channel`);
+    }
+    if (channel.type !== ChannelType.VOICE) {
+      serverError(`Can not find channel`);
+    }
+    await socket.join(`${socket.id}`);
+    await socket.join(`CHANNEL_VOICE_${channel.id}`);
+  }
+
+  @SubscribeMessage('joinVoiceChannelPeer')
+  async joinVoiceChannelPeer(
+    @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { id } = joinVoiceChannelDto;
+
+    if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
+      return;
+    }
+    const channel = await this.channelsService.findOne(id);
+    if (!channel) {
+      serverError(`Can not find channel`);
+    }
+    if (channel.type !== ChannelType.VOICE) {
+      serverError(`Can not find channel`);
+    }
+    if (this.users[id]) {
+      if (this.users[id].includes(socket.id)) {
+        return;
+      }
+      this.users[id].push(socket.id);
+    } else {
+      this.users[id] = [socket.id];
+    }
+    this.socketToRoom[socket.id] = id;
+    console.log('id of this ', socket.id);
+    const usersInThisRoom = this.users[id].filter((id: string) => {
+      console.log(id !== socket.id, id, socket.id);
+      return id !== socket.id;
+    });
+
+    console.log(this.users, usersInThisRoom);
+    return this.server
+      .to(`CHANNEL_VOICE_${id}`)
+      .emit(`ALL_USERS`, usersInThisRoom);
+  }
+
+  @SubscribeMessage('sendingSignal')
+  async sendingSignal(
+    @MessageBody() payload: SendingSignalDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { userToSignal, signal, callerID } = payload;
+    console.log('from ', callerID, 'to ', userToSignal);
+    return socket
+      .to(`${userToSignal}`)
+      .emit(`CHANNEL_VOICE_JOINED`, { signal, callerID });
+  }
+
+  @SubscribeMessage('returningSignal')
+  async returningSignal(
+    @MessageBody() payload: SendingSignalDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { signal, callerID } = payload;
+    console.log('to ', callerID);
+    console.log('socket ', socket.id);
+
+    return this.server
+      .to(`${callerID}`)
+      .emit(`RECEIVE_RETURN_SIGNAL`, { signal, id: socket.id });
+  }
+
+  //   socket.on('disconnect', () => {
+  //     const roomID = socketToRoom[socket.id];
+  //     let room = users[roomID];
+  //     if (room) {
+  //         room = room.filter(id => id !== socket.id);
+  //         users[roomID] = room;
+  //     }
+  // });
 }

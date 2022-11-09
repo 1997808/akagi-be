@@ -1,6 +1,7 @@
 import { Channel, ChannelType } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty } from 'class-validator';
+import Peer from 'simple-peer';
 
 export class ChannelEntity implements Channel {
   @ApiProperty()
@@ -41,6 +42,10 @@ export class JoinVoiceChannelDto {
 
   @ApiProperty()
   @IsNotEmpty()
+  userId: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
   pid: string;
 }
 
@@ -56,4 +61,18 @@ export class DisplayMediaDto {
   @ApiProperty()
   @IsNotEmpty()
   value: boolean;
+}
+
+export class SendingSignalDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  userToSignal: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  signal: string | Peer.SignalData;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  callerID: string;
 }
