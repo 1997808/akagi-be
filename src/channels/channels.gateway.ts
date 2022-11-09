@@ -12,6 +12,7 @@ import { UpdateChannelDto } from './dto/update-channel.dto';
 import { AuthService } from '../auth/auth.service';
 import { serverError } from '../utils/exception';
 import {
+  DisplayMediaDto,
   JoinActiveChannelDto,
   JoinVoiceChannelDto,
 } from './entities/channel.entity';
@@ -94,6 +95,7 @@ export class ChannelsGateway {
   ) {
     const { id, pid } = joinVoiceChannelDto;
 
+    console.log(id, pid, 'join');
     if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
       return;
     }
@@ -110,6 +112,53 @@ export class ChannelsGateway {
     await socket.join(`CHANNEL_VOICE_${channel.id}`);
     return socket.broadcast
       .to(`CHANNEL_VOICE_${channel.id}`)
-      .emit(`CHANNEL_VOICE_JOINED`, { user: user, peer: pid });
+      .emit(`CHANNEL_VOICE_JOINED`, { user: user, pid });
+  }
+
+  @SubscribeMessage('displayMedia')
+  async displayMedia(
+    @MessageBody() displayMediaDto: DisplayMediaDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { id, pid, value } = displayMediaDto;
+    console.log(id, pid, value, 'displayMedia');
+    if (!checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
+      return;
+    }
+    return socket.broadcast
+      .to(`CHANNEL_VOICE_${id}`)
+      .emit(`DISPLAY_MEDIA`, { pid, value });
+  }
+
+  @SubscribeMessage('userVideoOff')
+  async userVideoOff(
+    @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { id, pid } = joinVoiceChannelDto;
+    console.log(id, pid, 'userVideoOff');
+
+    if (!checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
+      return;
+    }
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    return socket.broadcast
+      .to(`CHANNEL_VOICE_${id}`)
+      .emit(`USER_VIDEO_CHANGE`, { user: user, peer: pid });
+  }
+
+  @SubscribeMessage('userDisconnected')
+  async userDisconnected(
+    @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { id, pid } = joinVoiceChannelDto;
+    console.log(id, pid, 'userDisconnected');
+
+    return socket.broadcast
+      .to(`CHANNEL_VOICE_${id}`)
+      .emit(`USER_DISCONNECTED`, pid);
   }
 }

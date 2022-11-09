@@ -43,3 +43,17 @@ export class JoinVoiceChannelDto {
   @IsNotEmpty()
   pid: string;
 }
+
+export class DisplayMediaDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  id: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  pid: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  value: boolean;
+}
