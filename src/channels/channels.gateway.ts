@@ -4,6 +4,8 @@ import {
   MessageBody,
   WebSocketServer,
   ConnectedSocket,
+  OnGatewayInit,
+  OnGatewayConnection,
 } from '@nestjs/websockets';
 import { ChannelsService } from './channels.service';
 import { Socket, Server } from 'socket.io';
@@ -19,6 +21,7 @@ import {
 } from './entities/channel.entity';
 import { checkHasSocketRoom, deleteSocketRooms } from '../utils/socketUtil';
 import { ChannelType } from '@prisma/client';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
@@ -26,14 +29,27 @@ import { ChannelType } from '@prisma/client';
   },
   namespace: '/',
 })
-export class ChannelsGateway {
-  users = {};
-  socketToRoom = {};
+export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
+  private logger: Logger = new Logger('AppGateWay');
+
+  users: Record<number, string[]> = {};
+  socketToRoom: Record<number, string[]> = {};
   constructor(
     private readonly channelsService: ChannelsService,
     private readonly authService: AuthService,
   ) {}
+
   @WebSocketServer() server: Server;
+  afterInit(server: Server) {
+    this.logger.log('Initialized');
+  }
+
+  handleConnection(socket: Socket) {
+    this.logger.log(`client connect ${socket.id}`);
+  }
+  handleDisconnect(socket: Socket) {
+    this.disconnect(socket);
+  }
 
   @SubscribeMessage('createChannel')
   async create(
@@ -240,25 +256,25 @@ export class ChannelsGateway {
       .emit(`RECEIVE_RETURN_SIGNAL`, { signal, id: socket.id });
   }
 
-  // @SubscribeMessage('disconnectVoiceChannel')
-  // async disconnectVoiceChannel(
-  //   @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
-  //   @ConnectedSocket() socket: Socket,
-  // ) {
-  //   const { id, pid } = joinVoiceChannelDto;
-  //   console.log(id, pid, 'userDisconnected');
-
-  //   return socket.broadcast
-  //     .to(`CHANNEL_VOICE_${id}`)
-  //     .emit(`USER_DISCONNECTED`, pid);
-  // }
-
-  //   socket.on('disconnect', () => {
-  //     const roomID = socketToRoom[socket.id];
-  //     let room = users[roomID];
-  //     if (room) {
-  //         room = room.filter(id => id !== socket.id);
-  //         users[roomID] = room;
-  //     }
-  // });
+  disconnect(socket: Socket) {
+    const pid = socket.id;
+    const channelId = this.socketToRoom[pid];
+    this.logger.log(
+      `client disconnected ${pid} channel channelId ${channelId}`,
+    );
+    if (!channelId) {
+      return;
+    }
+    const usersInChannel = this.users[channelId];
+    if (!usersInChannel) {
+      return;
+    }
+    delete this.socketToRoom[pid];
+    this.users[channelId] = usersInChannel.filter(
+      (channelId) => channelId !== pid,
+    );
+    return socket.broadcast
+      .to(`CHANNEL_VOICE_${channelId}`)
+      .emit(`USER_DISCONNECTED`, { pid });
+  }
 }
