@@ -49,6 +49,20 @@ export class JoinVoiceChannelDto {
   pid: string;
 }
 
+export class ToggleTrackDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  id: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  kind: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  value: boolean;
+}
+
 export class DisplayMediaDto {
   @ApiProperty()
   @IsNotEmpty()

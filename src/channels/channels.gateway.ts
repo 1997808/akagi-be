@@ -18,6 +18,7 @@ import {
   JoinActiveChannelDto,
   JoinVoiceChannelDto,
   SendingSignalDto,
+  ToggleTrackDto,
 } from './entities/channel.entity';
 import { checkHasSocketRoom, deleteSocketRooms } from '../utils/socketUtil';
 import { ChannelType } from '@prisma/client';
@@ -146,19 +147,19 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
       .emit(`DISPLAY_MEDIA`, { pid, value });
   }
 
-  @SubscribeMessage('userVideoOff')
-  async userVideoOff(
-    @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
+  @SubscribeMessage('userVideoToggle')
+  async userVideoToggle(
+    @MessageBody() toggleTrackDto: ToggleTrackDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { id, pid } = joinVoiceChannelDto;
-    console.log(id, pid, 'userVideoOff');
-    const user = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
+    const { id, kind, value } = toggleTrackDto;
+    console.log(id, kind, value, 'userVideoToggle', socket.id);
+    // const user = await this.authService.getUserFromToken(
+    //   socket.handshake.auth.token,
+    // );
     return socket.broadcast
       .to(`CHANNEL_VOICE_${id}`)
-      .emit(`USER_VIDEO_CHANGE`, { user: user, peer: pid });
+      .emit(`USER_VIDEO_CHANGE`, { kind, value, pid: socket.id });
   }
 
   @SubscribeMessage('userDisconnected')
