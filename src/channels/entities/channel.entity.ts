@@ -49,6 +49,20 @@ export class JoinVoiceChannelDto {
   pid: string;
 }
 
+export class JoinVoiceDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  id: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  audio: boolean;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  video: boolean;
+}
+
 export class ToggleTrackDto {
   @ApiProperty()
   @IsNotEmpty()
@@ -93,4 +107,12 @@ export class SendingSignalDto {
   @ApiProperty()
   @IsNotEmpty()
   user: User;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  video: boolean;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  audio: boolean;
 }

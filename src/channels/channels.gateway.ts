@@ -17,6 +17,7 @@ import {
   DisplayMediaDto,
   JoinActiveChannelDto,
   JoinVoiceChannelDto,
+  JoinVoiceDto,
   SendingSignalDto,
   ToggleTrackDto,
 } from './entities/channel.entity';
@@ -27,6 +28,8 @@ import { Logger } from '@nestjs/common';
 interface UserRecord {
   pid: string;
   user?: User;
+  video: boolean;
+  audio: boolean;
 }
 
 @WebSocketGateway({
@@ -132,6 +135,21 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
   ) {
     const { id, kind, value } = toggleTrackDto;
     console.log(id, kind, value, 'userTrackToggle', socket.id);
+    const usersInChannel = this.users[id];
+    if (!usersInChannel) {
+      return;
+    }
+    this.users[id] = usersInChannel.map((userRecord: UserRecord) => {
+      if (userRecord.pid === socket.id) {
+        if (kind === 'video') {
+          userRecord.video = value;
+        }
+        if (kind === 'audio') {
+          userRecord.audio = value;
+        }
+      }
+      return userRecord;
+    });
     // const user = await this.authService.getUserFromToken(
     //   socket.handshake.auth.token,
     // );
@@ -176,10 +194,10 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
 
   @SubscribeMessage('joinVoiceChannelPeer')
   async joinVoiceChannelPeer(
-    @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
+    @MessageBody() joinVoiceDto: JoinVoiceDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { id } = joinVoiceChannelDto;
+    const { id, audio, video } = joinVoiceDto;
     if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
       return;
     }
@@ -200,9 +218,9 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
       if (index > -1) {
         return;
       }
-      this.users[id].push({ pid: socket.id, user });
+      this.users[id].push({ pid: socket.id, user, audio, video });
     } else {
-      this.users[id] = [{ pid: socket.id, user }];
+      this.users[id] = [{ pid: socket.id, user, audio, video }];
     }
     this.socketToRoom[socket.id] = id;
     const usersInThisRoom = this.users[id].filter((userRecord: UserRecord) => {
@@ -220,22 +238,10 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     @MessageBody() payload: SendingSignalDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { userToSignal, signal, callerID, user } = payload;
-    const sendUser = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
-    console.log(
-      'send from ',
-      socket.id,
-      sendUser.username,
-      'to ',
-      userToSignal,
-      callerID + 'callerId',
-      user.username,
-    );
+    const { userToSignal, signal, callerID, user, audio, video } = payload;
     return socket
       .to(`${userToSignal}`)
-      .emit(`CHANNEL_VOICE_JOINED`, { signal, callerID, user });
+      .emit(`CHANNEL_VOICE_JOINED`, { signal, callerID, user, audio, video });
   }
 
   @SubscribeMessage('returningSignal')
@@ -243,21 +249,14 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     @MessageBody() payload: SendingSignalDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { signal, callerID, user } = payload;
-    const sendUser = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
-    console.log(
-      'return from ',
-      sendUser.username,
-      'to ',
-      callerID,
-      user.username,
-    );
-
-    return this.server
-      .to(`${callerID}`)
-      .emit(`RECEIVE_RETURN_SIGNAL`, { signal, pid: socket.id, user });
+    const { signal, callerID, user, audio, video } = payload;
+    return this.server.to(`${callerID}`).emit(`RECEIVE_RETURN_SIGNAL`, {
+      signal,
+      pid: socket.id,
+      user,
+      audio,
+      video,
+    });
   }
 
   disconnect(socket: Socket) {
