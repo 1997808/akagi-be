@@ -21,8 +21,13 @@ import {
   ToggleTrackDto,
 } from './entities/channel.entity';
 import { checkHasSocketRoom, deleteSocketRooms } from '../utils/socketUtil';
-import { ChannelType } from '@prisma/client';
+import { ChannelType, User } from '@prisma/client';
 import { Logger } from '@nestjs/common';
+
+interface UserRecord {
+  pid: string;
+  user?: User;
+}
 
 @WebSocketGateway({
   cors: {
@@ -33,7 +38,7 @@ import { Logger } from '@nestjs/common';
 export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
   private logger: Logger = new Logger('AppGateWay');
 
-  users: Record<number, string[]> = {};
+  users: Record<number, UserRecord[]> = {};
   socketToRoom: Record<number, string[]> = {};
   constructor(
     private readonly channelsService: ChannelsService,
@@ -108,33 +113,6 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     return this.server.to(`${user.id}`).emit('JOIN_CHANNEL');
   }
 
-  // @SubscribeMessage('joinVoiceChannel')
-  // async joinVoiceChannel(
-  //   @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
-  //   @ConnectedSocket() socket: Socket,
-  // ) {
-  //   const { id, pid } = joinVoiceChannelDto;
-
-  //   console.log(id, pid, 'join');
-  //   if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
-  //     return;
-  //   }
-  //   const user = await this.authService.getUserFromToken(
-  //     socket.handshake.auth.token,
-  //   );
-  //   const channel = await this.channelsService.findOne(id);
-  //   if (!channel) {
-  //     serverError(`Can not find channel`);
-  //   }
-  //   if (channel.type !== ChannelType.VOICE) {
-  //     serverError(`Can not find channel`);
-  //   }
-  //   await socket.join(`CHANNEL_VOICE_${channel.id}`);
-  //   return socket.broadcast
-  //     .to(`CHANNEL_VOICE_${channel.id}`)
-  //     .emit(`CHANNEL_VOICE_JOINED`, { user: user, pid });
-  // }
-
   @SubscribeMessage('displayMedia')
   async displayMedia(
     @MessageBody() displayMediaDto: DisplayMediaDto,
@@ -147,19 +125,19 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
       .emit(`DISPLAY_MEDIA`, { pid, value });
   }
 
-  @SubscribeMessage('userVideoToggle')
-  async userVideoToggle(
+  @SubscribeMessage('userTrackToggle')
+  async userTrackToggle(
     @MessageBody() toggleTrackDto: ToggleTrackDto,
     @ConnectedSocket() socket: Socket,
   ) {
     const { id, kind, value } = toggleTrackDto;
-    console.log(id, kind, value, 'userVideoToggle', socket.id);
+    console.log(id, kind, value, 'userTrackToggle', socket.id);
     // const user = await this.authService.getUserFromToken(
     //   socket.handshake.auth.token,
     // );
     return socket.broadcast
       .to(`CHANNEL_VOICE_${id}`)
-      .emit(`USER_VIDEO_CHANGE`, { kind, value, pid: socket.id });
+      .emit(`USER_TRACK_CHANGE`, { kind, value, pid: socket.id });
   }
 
   @SubscribeMessage('userDisconnected')
@@ -202,10 +180,12 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() socket: Socket,
   ) {
     const { id } = joinVoiceChannelDto;
-
     if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
       return;
     }
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
     const channel = await this.channelsService.findOne(id);
     if (!channel) {
       serverError(`Can not find channel`);
@@ -214,20 +194,24 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
       serverError(`Can not find channel`);
     }
     if (this.users[id]) {
-      if (this.users[id].includes(socket.id)) {
+      const index = this.users[id].findIndex(
+        (record) => record.pid === socket.id,
+      );
+      if (index > -1) {
         return;
       }
-      this.users[id].push(socket.id);
+      this.users[id].push({ pid: socket.id, user });
     } else {
-      this.users[id] = [socket.id];
+      this.users[id] = [{ pid: socket.id, user }];
     }
     this.socketToRoom[socket.id] = id;
-    const usersInThisRoom = this.users[id].filter((id: string) => {
-      return id !== socket.id;
+    const usersInThisRoom = this.users[id].filter((userRecord: UserRecord) => {
+      return userRecord.pid !== socket.id;
     });
 
-    console.log(usersInThisRoom);
-    return this.server.to(`${socket.id}`).emit(`ALL_USERS`, usersInThisRoom);
+    return this.server
+      .to(`${socket.id}`)
+      .emit(`ALL_USERS`, { users: usersInThisRoom });
     // .to(`CHANNEL_VOICE_${id}`)
   }
 
@@ -236,11 +220,22 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     @MessageBody() payload: SendingSignalDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { userToSignal, signal, callerID } = payload;
-    console.log('from ', callerID, 'to ', userToSignal);
+    const { userToSignal, signal, callerID, user } = payload;
+    const sendUser = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    console.log(
+      'send from ',
+      socket.id,
+      sendUser.username,
+      'to ',
+      userToSignal,
+      callerID + 'callerId',
+      user.username,
+    );
     return socket
       .to(`${userToSignal}`)
-      .emit(`CHANNEL_VOICE_JOINED`, { signal, callerID });
+      .emit(`CHANNEL_VOICE_JOINED`, { signal, callerID, user });
   }
 
   @SubscribeMessage('returningSignal')
@@ -248,13 +243,21 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     @MessageBody() payload: SendingSignalDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { signal, callerID } = payload;
-    console.log('to ', callerID);
-    console.log('socket ', socket.id);
+    const { signal, callerID, user } = payload;
+    const sendUser = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    console.log(
+      'return from ',
+      sendUser.username,
+      'to ',
+      callerID,
+      user.username,
+    );
 
     return this.server
       .to(`${callerID}`)
-      .emit(`RECEIVE_RETURN_SIGNAL`, { signal, id: socket.id });
+      .emit(`RECEIVE_RETURN_SIGNAL`, { signal, pid: socket.id, user });
   }
 
   disconnect(socket: Socket) {
@@ -272,7 +275,7 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     }
     delete this.socketToRoom[pid];
     this.users[channelId] = usersInChannel.filter(
-      (channelId) => channelId !== pid,
+      (userRecord: UserRecord) => userRecord.pid !== pid,
     );
     return socket.broadcast
       .to(`CHANNEL_VOICE_${channelId}`)

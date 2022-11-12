@@ -1,4 +1,4 @@
-import { Channel, ChannelType } from '@prisma/client';
+import { Channel, ChannelType, User } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty } from 'class-validator';
 import Peer from 'simple-peer';
@@ -89,4 +89,8 @@ export class SendingSignalDto {
   @ApiProperty()
   @IsNotEmpty()
   callerID: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  user: User;
 }
