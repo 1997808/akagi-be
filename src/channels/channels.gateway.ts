@@ -169,7 +169,7 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
 
     return socket.broadcast
       .to(`CHANNEL_VOICE_${id}`)
-      .emit(`USER_DISCONNECTED`, pid);
+      .emit(`USER_DISCONNECTED`, { pid });
   }
 
   @SubscribeMessage('joinVoiceChannel')
