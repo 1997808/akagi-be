@@ -57,7 +57,8 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     this.logger.log(`client connect ${socket.id}`);
   }
   handleDisconnect(socket: Socket) {
-    this.disconnect(socket);
+    this.logger.log(`client disconnected ${socket.id}`);
+    this.disconnect(socket.id);
   }
 
   @SubscribeMessage('createChannel')
@@ -178,9 +179,6 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
   ) {
     const { id } = joinVoiceChannelDto;
 
-    if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
-      return;
-    }
     const channel = await this.channelsService.findOne(id);
     if (!channel) {
       serverError(`Can not find channel`);
@@ -188,8 +186,11 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     if (channel.type !== ChannelType.VOICE) {
       serverError(`Can not find channel`);
     }
+    if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}`)) {
+      return;
+    }
+    deleteSocketRooms(socket, 'CHANNEL_ACTIVE');
     await socket.join(`${socket.id}`);
-    await socket.join(`CHANNEL_VOICE_${channel.id}`);
   }
 
   @SubscribeMessage('joinVoiceChannelPeer')
@@ -198,9 +199,6 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() socket: Socket,
   ) {
     const { id, audio, video } = joinVoiceDto;
-    if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}}`)) {
-      return;
-    }
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
@@ -211,13 +209,45 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     if (channel.type !== ChannelType.VOICE) {
       serverError(`Can not find channel`);
     }
+
+    this.logger.log(`client connect ${socket.id} channel ${channel.id}`);
+    socket.rooms.forEach((item: string) => {
+      // check if user join voice channel but still joining some voice channel before
+      if (item.includes('CHANNEL_VOICE') && item !== `CHANNEL_VOICE_${id}`) {
+        deleteSocketRooms(socket, item);
+        console.log('disconnect', socket.id, ' from ', item);
+        this.disconnect(socket.id);
+        this.server.to(`${socket.id}`).emit(`RELOAD_PAGE`, { reload: true });
+      }
+    });
+
+    if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}`)) {
+      console.log(socket.id, 'user might have been here before 222222');
+      if (this.users[id]) {
+        const userList = this.users[id].filter((record) => {
+          console.log(record.user.id === user.id && record.pid !== socket.id);
+          if (record.user.id === user.id && record.pid !== socket.id) {
+            this.disconnect(record.pid);
+          }
+          // todo same user but different socketId
+          return !(record.user.id === user.id && record.pid !== socket.id);
+        });
+        this.users[id] = userList;
+      }
+      console.log('emit user list ');
+      this.server.to(`${socket.id}`).emit(`RELOAD_PAGE`, { reload: true });
+    }
+    deleteSocketRooms(socket, 'CHANNEL_VOICE');
+
     if (this.users[id]) {
       const index = this.users[id].findIndex(
         (record) => record.pid === socket.id,
       );
       if (index > -1) {
+        // if this socket has join
         return;
       }
+
       this.users[id].push({ pid: socket.id, user, audio, video });
     } else {
       this.users[id] = [{ pid: socket.id, user, audio, video }];
@@ -226,11 +256,11 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     const usersInThisRoom = this.users[id].filter((userRecord: UserRecord) => {
       return userRecord.pid !== socket.id;
     });
+    await socket.join(`CHANNEL_VOICE_${channel.id}`);
 
     return this.server
       .to(`${socket.id}`)
       .emit(`ALL_USERS`, { users: usersInThisRoom });
-    // .to(`CHANNEL_VOICE_${id}`)
   }
 
   @SubscribeMessage('sendingSignal')
@@ -239,6 +269,7 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() socket: Socket,
   ) {
     const { userToSignal, signal, callerID, user, audio, video } = payload;
+    console.log(callerID, ' me here sending signal', userToSignal);
     return socket
       .to(`${userToSignal}`)
       .emit(`CHANNEL_VOICE_JOINED`, { signal, callerID, user, audio, video });
@@ -250,6 +281,7 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() socket: Socket,
   ) {
     const { signal, callerID, user, audio, video } = payload;
+    console.log(socket.id, ' accept and return signal', callerID);
     return this.server.to(`${callerID}`).emit(`RECEIVE_RETURN_SIGNAL`, {
       signal,
       pid: socket.id,
@@ -259,12 +291,8 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     });
   }
 
-  disconnect(socket: Socket) {
-    const pid = socket.id;
+  disconnect(pid: string) {
     const channelId = this.socketToRoom[pid];
-    this.logger.log(
-      `client disconnected ${pid} channel channelId ${channelId}`,
-    );
     if (!channelId) {
       return;
     }
@@ -276,7 +304,8 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     this.users[channelId] = usersInChannel.filter(
       (userRecord: UserRecord) => userRecord.pid !== pid,
     );
-    return socket.broadcast
+    // deleteSocketRooms(socket, 'CHANNEL_VOICE');
+    this.server
       .to(`CHANNEL_VOICE_${channelId}`)
       .emit(`USER_DISCONNECTED`, { pid });
   }
