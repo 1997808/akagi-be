@@ -1,0 +1,40 @@
+FROM node:lts-alpine AS builder
+# Add a work directory
+WORKDIR /app
+
+# Cache and Install dependencies
+COPY akagi-be/package.json ./
+COPY akagi-be/yarn.lock ./
+COPY --chown=node:node akagi-be/prisma ./prisma/
+COPY --chown=node:node akagi-be/dist ./dist/
+
+RUN yarn install --production --pure-lockfile
+
+USER node
+
+# Copy app files
+# COPY /akagi-be .
+
+# Build the app
+# RUN yarn run build
+
+###################
+# PRODUCTION
+###################
+
+FROM node:lts-alpine as production
+WORKDIR /app
+
+ARG NODE_ENV=production
+ENV NODE_ENV=${NODE_ENV}
+# Copy built assets from builder
+COPY --from=builder /app/package.json .
+COPY --from=builder /app/yarn.lock .
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules/
+COPY --chown=node:node --from=builder /app/dist ./dist/
+# 👇 copy prisma directory
+COPY --from=builder /app/prisma ./prisma/
+
+# Start the server using the production build
+# 👇 new migrate and start app script
+CMD [  "yarn", "run", "start:migrate:prod" ]
