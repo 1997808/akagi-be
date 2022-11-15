@@ -39,7 +39,7 @@ interface UserRecord {
   namespace: '/',
 })
 export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
-  private logger: Logger = new Logger('AppGateWay');
+  private logger: Logger = new Logger('ChannelGateWay');
 
   users: Record<number, UserRecord[]> = {};
   socketToRoom: Record<number, string[]> = {};
@@ -269,7 +269,13 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() socket: Socket,
   ) {
     const { userToSignal, signal, callerID, user, audio, video } = payload;
-    console.log(callerID, ' me here sending signal', userToSignal);
+    console.log(
+      callerID,
+      ' me here sending signal to',
+      userToSignal,
+      audio,
+      video,
+    );
     return socket
       .to(`${userToSignal}`)
       .emit(`CHANNEL_VOICE_JOINED`, { signal, callerID, user, audio, video });
@@ -281,7 +287,13 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
     @ConnectedSocket() socket: Socket,
   ) {
     const { signal, callerID, user, audio, video } = payload;
-    console.log(socket.id, ' accept and return signal', callerID);
+    console.log(
+      socket.id,
+      ' accept and return signal to',
+      callerID,
+      audio,
+      video,
+    );
     return this.server.to(`${callerID}`).emit(`RECEIVE_RETURN_SIGNAL`, {
       signal,
       pid: socket.id,

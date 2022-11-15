@@ -7,8 +7,13 @@ import { PrismaService } from '../prisma/prisma.service';
 // import { RolesOnMembersService } from '../roles-on-members/roles-on-members.service';
 import { RolesService } from '../roles/roles.service';
 import { serverError } from '../utils/exception';
-import { CreateDirectGroupDto, CreateGroupDto } from './dto/create-group.dto';
+import {
+  CreateDirectGroupDto,
+  CreateGroupDto,
+  UserTypingProps,
+} from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
+import { UserTyping } from './groups.gateway';
 
 @Injectable()
 export class GroupsService {
@@ -146,10 +151,59 @@ export class GroupsService {
     return group.memberOwnerId === memberId;
   }
 
-  async joinGroupByinviteToken(user: User, token: string) {
+  async joinGroupByInviteToken(user: User, token: string) {
     const invite = await this.invitesService.findAvailableByToken(token);
     await this.membersService.userJoinGroup(user, invite.groupId);
     await this.invitesService.minusOneInviteUses(invite.id);
     return await this.findOne(invite.groupId);
+  }
+
+  async handleUserTyping(
+    user: User,
+    data: UserTypingProps,
+    userTyping?: UserTyping[],
+  ) {
+    const { typing } = data;
+    if (!userTyping) {
+      // first people to type
+      if (typing) {
+        return [{ user }];
+      }
+    } else {
+      if (typing) {
+        if (
+          !userTyping.some((userTyping) => {
+            return userTyping.user.id === user.id;
+          })
+        ) {
+          userTyping.push({ user });
+          return userTyping;
+        }
+      } else {
+        return userTyping.filter(
+          (userTyping: UserTyping) => userTyping.user.id !== user.id,
+        );
+      }
+    }
+  }
+
+  async getMessageUserTyping(userTyping: UserTyping[]) {
+    const last = userTyping ? userTyping.length : 0;
+    let message = '';
+    if (last === 0) {
+      message = '';
+    } else if (last > 3) {
+      message = 'Many people are typing ...';
+    } else {
+      for (let i = 0; i < last; i++) {
+        message += userTyping[i].user.username;
+        if (i === last - 1) {
+          message += ' typing ...';
+        } else {
+          message += ', ';
+        }
+      }
+    }
+    return message;
   }
 }

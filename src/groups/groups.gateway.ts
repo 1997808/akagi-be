@@ -9,11 +9,17 @@ import { GroupsService } from './groups.service';
 import {
   CreateGroupDto,
   JoinGroupByinviteTokenProps,
+  UserTypingProps,
 } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { Socket, Server } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { serverError } from '../utils/exception';
+import { User } from '@prisma/client';
+
+export interface UserTyping {
+  user: User;
+}
 
 @WebSocketGateway({
   cors: {
@@ -22,6 +28,8 @@ import { serverError } from '../utils/exception';
   namespace: '/',
 })
 export class GroupsGateway {
+  userTyping: Record<number, UserTyping[]> = {};
+
   constructor(
     private readonly groupsService: GroupsService,
     private readonly authService: AuthService,
@@ -80,20 +88,48 @@ export class GroupsGateway {
     return this.server.to(`GROUP-${id}`).emit('GROUP_DELETED', id);
   }
 
-  @SubscribeMessage('joinGroupByinviteToken')
-  async joinGroupByinviteToken(
+  @SubscribeMessage('joinGroupByInviteToken')
+  async joinGroupByInviteToken(
     @MessageBody() data: JoinGroupByinviteTokenProps,
     @ConnectedSocket() socket: Socket,
   ) {
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
-    const group = await this.groupsService.joinGroupByinviteToken(
+    const group = await this.groupsService.joinGroupByInviteToken(
       user,
       data.token,
     );
     // todo add event member add
     // this.server.to(`${group.id}`).emit('MEMBER_ADD', group);
     return this.server.to(`${user.id}`).emit('GROUP_CREATED', group);
+  }
+
+  @SubscribeMessage('typing')
+  async typing(
+    @MessageBody() data: UserTypingProps,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { channelId } = data;
+    const user = await this.authService.getUserFromToken(
+      socket.handshake.auth.token,
+    );
+    // todo check really existed
+    if (!channelId) {
+      return;
+    }
+    const userTypingInChannel = await this.groupsService.handleUserTyping(
+      user,
+      data,
+      this.userTyping[channelId],
+    );
+
+    const message = await this.groupsService.getMessageUserTyping(
+      userTypingInChannel,
+    );
+    this.userTyping[channelId] = userTypingInChannel;
+    return this.server
+      .to(`CHANNEL_ACTIVE_${channelId}`)
+      .emit('USER_TYPING', message);
   }
 }

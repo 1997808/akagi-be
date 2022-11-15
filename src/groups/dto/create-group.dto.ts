@@ -35,3 +35,13 @@ export class JoinGroupByinviteTokenProps {
   @IsNotEmpty()
   token!: string;
 }
+
+export class UserTypingProps {
+  @ApiProperty()
+  @IsNotEmpty()
+  channelId!: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  typing!: boolean;
+}
