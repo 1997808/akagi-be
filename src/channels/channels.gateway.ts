@@ -4,7 +4,6 @@ import {
   MessageBody,
   WebSocketServer,
   ConnectedSocket,
-  OnGatewayInit,
   OnGatewayConnection,
 } from '@nestjs/websockets';
 import { ChannelsService } from './channels.service';
@@ -38,7 +37,7 @@ interface UserRecord {
   },
   namespace: '/',
 })
-export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
+export class ChannelsGateway implements OnGatewayConnection {
   private logger: Logger = new Logger('ChannelGateWay');
 
   users: Record<number, UserRecord[]> = {};
@@ -49,13 +48,9 @@ export class ChannelsGateway implements OnGatewayInit, OnGatewayConnection {
   ) {}
 
   @WebSocketServer() server: Server;
-  afterInit(server: Server) {
-    this.logger.log('Initialized');
-  }
 
-  handleConnection(socket: Socket) {
-    this.logger.log(`client connect ${socket.id}`);
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  handleConnection() {}
   handleDisconnect(socket: Socket) {
     this.logger.log(`client disconnected ${socket.id}`);
     this.disconnect(socket.id);

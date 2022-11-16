@@ -6,9 +6,11 @@ import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { User } from '@prisma/client';
 import { serverError } from '../utils/exception';
+import { Socket } from 'socket.io';
 
 @Injectable()
 export class AuthService {
+  userOnline: number[] = [];
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -89,6 +91,22 @@ export class AuthService {
     } catch (err) {
       return false;
     }
+  }
+
+  getAllOnlineUser() {
+    return this.userOnline;
+  }
+
+  handleUserOnline(socket: Socket, id: number) {
+    if (!this.userOnline.includes(id)) {
+      this.userOnline.push(id);
+      socket.broadcast.emit('USER_ONLINE', id);
+    }
+  }
+
+  handleUserDisconnect(socket: Socket, id: number) {
+    this.userOnline = this.userOnline.filter((userId) => userId !== id);
+    socket.broadcast.emit('USER_OFFLINE', id);
   }
 
   private async generateToken(user: User) {

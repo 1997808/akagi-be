@@ -100,7 +100,7 @@ export class FriendsService {
       userSendRequest.friend,
       { type: GroupType.DIRECT },
     );
-    const group = await this.groupsService.findOne(direct.id);
+    const group = await this.groupsService.findOneForDirect(direct.id);
 
     return { userSendRequest, userGetRequest, group };
   }

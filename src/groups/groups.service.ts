@@ -100,6 +100,13 @@ export class GroupsService {
     });
   }
 
+  async findOneForDirect(id: number) {
+    return await this.prisma.group.findUnique({
+      where: { id },
+      include: { members: { include: { user: true } } },
+    });
+  }
+
   async update(id: number, updateGroupDto: UpdateGroupDto) {
     return await this.prisma.group.update({
       where: { id },
