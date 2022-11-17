@@ -25,7 +25,18 @@ export class RolesOnMembersService {
   //   });
   // }
 
-  // async remove(id: number) {
-  //   return await this.prisma.rolesOnMembers.delete({ where: { id } });
-  // }
+  async remove(id: number) {
+    return await this.prisma.rolesOnMembers.delete({ where: { id } });
+  }
+
+  async removeAllRoleFromMember(memberId: number) {
+    const memberRoles = await this.prisma.rolesOnMembers.findMany({
+      where: { memberId },
+      select: { id: true },
+    });
+    const ids = memberRoles.map((item) => item.id);
+    return await this.prisma.rolesOnMembers.deleteMany({
+      where: { id: { in: ids } },
+    });
+  }
 }

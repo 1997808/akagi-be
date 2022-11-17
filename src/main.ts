@@ -4,9 +4,22 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as event from 'events';
 import { HttpExceptionFilter } from './utils/exception';
+// import * as fs from 'fs';
+// import * as path from 'path';
 
 async function bootstrap() {
+  // const httpsOptions = {
+  //   key: fs.readFileSync(
+  //     path.resolve('certbot', 'conf', 'live', 'karuhi.me', 'privkey.pem'),
+  //   ),
+  //   cert: fs.readFileSync(
+  //     path.resolve('certbot', 'conf', 'live', 'karuhi.me', 'cert.pem'),
+  //   ),
+  // };
+
+  // const app = await NestFactory.create(AppModule, { httpsOptions });
   const app = await NestFactory.create(AppModule);
+
   app.enableCors({
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -25,6 +38,6 @@ async function bootstrap() {
   SwaggerModule.setup('swagger', app, document);
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  await app.listen(3000);
+  await app.listen(3000, '0.0.0.0');
 }
 bootstrap();

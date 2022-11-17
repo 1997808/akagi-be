@@ -5,9 +5,10 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { MembersController } from './members.controller';
 import { RolesModule } from '../roles/roles.module';
 import { RolesOnMembersModule } from '../roles-on-members/roles-on-members.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, RolesModule, RolesOnMembersModule],
+  imports: [PrismaModule, RolesModule, RolesOnMembersModule, AuthModule],
   controllers: [MembersController],
   providers: [MembersGateway, MembersService],
   exports: [MembersService],

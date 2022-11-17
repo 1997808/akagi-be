@@ -67,7 +67,7 @@ export class ChannelsGateway implements OnGatewayConnection {
     // todo check user have role to create channel
     const channels = await this.channelsService.create(createChannelDto);
     return this.server
-      .to(`${createChannelDto.groupId}`)
+      .to(`GROUP_ACTIVE_${createChannelDto.groupId}`)
       .emit('CHANNEL_CREATED', channels);
   }
 
@@ -109,7 +109,7 @@ export class ChannelsGateway implements OnGatewayConnection {
     }
     deleteSocketRooms(socket, 'CHANNEL_ACTIVE');
     await socket.join(`CHANNEL_ACTIVE_${channel.id}`);
-    return this.server.to(`${user.id}`).emit('JOIN_CHANNEL');
+    // return this.server.to(`${user.id}`).emit('JOIN_CHANNEL');
   }
 
   @SubscribeMessage('displayMedia')

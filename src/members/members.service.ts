@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { GroupType, User } from '@prisma/client';
+import { GroupType, MemberStatus, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RolesOnMembersService } from '../roles-on-members/roles-on-members.service';
 import { RolesService } from '../roles/roles.service';
@@ -18,15 +18,19 @@ export class MembersService {
 
   // todo add default roles for member
   async create(createMemberDto: CreateMemberDto) {
-    if (
-      !!(await this.isUserGroupMember(
-        createMemberDto.userId,
-        createMemberDto.groupId,
-      ))
-    ) {
-      serverError('User already member');
+    const member = await this.isUserGroupMember(
+      createMemberDto.userId,
+      createMemberDto.groupId,
+    );
+    if (!member) {
+      return await this.prisma.member.create({ data: createMemberDto });
+    } else {
+      if (member.status !== MemberStatus.IN) {
+        return await this.update(member.id, { status: MemberStatus.IN });
+      } else {
+        serverError('User already member');
+      }
     }
-    return await this.prisma.member.create({ data: createMemberDto });
   }
 
   async findAll() {
@@ -37,9 +41,17 @@ export class MembersService {
     return await this.prisma.member.findUnique({ where: { id } });
   }
 
+  async findGroupByMemberId(memberId: number) {
+    const member = await this.prisma.member.findFirst({
+      where: { id: memberId },
+      select: { group: true },
+    });
+    return member.group;
+  }
+
   async findAllGroupUserIn(userId: number) {
     const result = await this.prisma.member.findMany({
-      where: { userId },
+      where: { userId, status: MemberStatus.IN },
       select: { group: true },
       orderBy: { group: { name: 'asc' } },
     });
@@ -91,7 +103,7 @@ export class MembersService {
     return await this.prisma.member.findMany({
       skip: skip,
       take: take,
-      where: { groupId },
+      where: { groupId, status: MemberStatus.IN },
       include: { user: true },
       orderBy: { user: { username: 'asc' } },
     });
@@ -106,5 +118,35 @@ export class MembersService {
 
   async remove(id: number) {
     return await this.prisma.member.delete({ where: { id } });
+  }
+
+  async canUserKickMember(user: User, memberId: number) {
+    const member = await this.findOne(memberId);
+    console.log(user.id, member, memberId);
+    if (!member) {
+      return false;
+    }
+    if (member.status !== MemberStatus.IN) {
+      return false;
+    }
+    if (user.id === member.userId) {
+      // they kick themselves
+      return true;
+    }
+    const kicker = await this.isUserGroupMember(user.id, member.groupId);
+    if (!kicker) {
+      return false;
+    }
+    // if (kicker) {
+    // todo check user have roles or is group owner
+    // return true;
+    // }
+    return false;
+  }
+
+  async memberLeaveGroup(id: number) {
+    const member = await this.update(id, { status: MemberStatus.OUT });
+    await this.rolesOnMembersService.removeAllRoleFromMember(id);
+    return member;
   }
 }

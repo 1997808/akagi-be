@@ -16,6 +16,7 @@ import { Socket, Server } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { serverError } from '../utils/exception';
 import { User } from '@prisma/client';
+import { checkHasSocketRoom, deleteSocketRooms } from '../utils/socketUtil';
 
 export interface UserTyping {
   user: User;
@@ -36,11 +37,14 @@ export class GroupsGateway {
   ) {}
   @WebSocketServer() server: Server;
 
-  @SubscribeMessage('listenGroup')
-  async listenGroup(
+  @SubscribeMessage('joinGroup')
+  async joinGroup(
     @MessageBody() id: number,
     @ConnectedSocket() socket: Socket,
   ) {
+    if (checkHasSocketRoom(socket, `GROUP_ACTIVE_${id}`)) {
+      return;
+    }
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
@@ -48,8 +52,9 @@ export class GroupsGateway {
     if (!group) {
       serverError(`Can not find group`);
     }
-    await socket.join(`GROUP-${group.id}`);
-    return this.server.to(`${user.id}`).emit('JOIN_GROUP_READY');
+    deleteSocketRooms(socket, 'GROUP_ACTIVE');
+    await socket.join(`GROUP_ACTIVE_${group.id}`);
+    // return this.server.to(`${user.id}`).emit('JOIN_GROUP_READY');
   }
 
   @SubscribeMessage('createGroup')
@@ -85,7 +90,7 @@ export class GroupsGateway {
   @SubscribeMessage('removeGroup')
   async remove(@MessageBody() id: number) {
     await this.groupsService.remove(id);
-    return this.server.to(`GROUP-${id}`).emit('GROUP_DELETED', id);
+    return this.server.to(`GROUP_${id}`).emit('GROUP_DELETED', id);
   }
 
   @SubscribeMessage('joinGroupByInviteToken')

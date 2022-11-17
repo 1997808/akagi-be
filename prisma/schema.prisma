@@ -57,6 +57,7 @@ model Member {
   groupId    Int
   group      Group            @relation(name: "groupMember", fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   groupOwner Group?           @relation(name: "owner")
+  status     MemberStatus     @default(IN)
   messages   Message[]
   roles      RolesOnMembers[]
   invites    Invite[]
@@ -74,6 +75,7 @@ model Role {
 }
 
 model RolesOnMembers {
+  id         Int      @id @default(autoincrement())
   member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   memberId   Int
   role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -81,7 +83,7 @@ model RolesOnMembers {
   assignedAt DateTime @default(now())
   // assignedBy String
 
-  @@id([memberId, roleId])
+  @@unique([memberId, roleId])
 }
 
 model Channel {
@@ -130,6 +132,12 @@ model Invite {
 //   CANCEL: 4
 //   BLOCK: 5
 // }
+
+enum MemberStatus {
+  IN
+  OUT
+  DELETE
+}
 
 enum GroupType {
   DIRECT
