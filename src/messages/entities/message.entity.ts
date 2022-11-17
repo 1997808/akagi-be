@@ -22,4 +22,7 @@ export class MessageEntity implements Message {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty()
+  pinMessageId: number;
 }
