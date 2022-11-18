@@ -15,6 +15,7 @@ import { RolesOnMembersModule } from './roles-on-members/roles-on-members.module
 import { FilesModule } from './files/files.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { PinMessagesModule } from './pin-messages/pin-messages.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { memoryStorage } from 'multer';
     RolesModule,
     RolesOnMembersModule,
     FilesModule,
+    PinMessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard';
 import { AuthUser } from '../users/user.decorator';
 import { User } from '@prisma/client';
 import { CreateChannelDto } from './dto/create-channel.dto';
+import { AuthService } from '../auth/auth.service';
 
 @Controller('channels')
 @ApiBearerAuth('defaultToken')

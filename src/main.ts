@@ -27,7 +27,7 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(new ValidationPipe());
-  event.EventEmitter.defaultMaxListeners = 18;
+  event.EventEmitter.defaultMaxListeners = 20;
 
   const config = new DocumentBuilder()
     .setTitle('Akagi API')
