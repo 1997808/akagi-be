@@ -43,7 +43,7 @@ export class AuthGateway implements OnGatewayConnection {
       socket.handshake.auth.token,
     );
     await socket.join(`${user.id}`);
-    this.server.to(`${user.id}`).emit('JOIN_USER_OK');
+    // this.server.to(`${user.id}`).emit('JOIN_USER_OK');
     this.server
       .to(`${user.id}`)
       .emit('ALL_USER_ONLINE', this.authService.getAllOnlineUser());
