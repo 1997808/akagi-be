@@ -22,7 +22,8 @@ export class MessagesService {
     });
     const message = await this.prisma.message.create({
       data: {
-        content: content,
+        content: content || null,
+        image: image || null,
         channel: {
           connect: {
             id: channel.id,
