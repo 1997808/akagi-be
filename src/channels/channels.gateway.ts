@@ -130,7 +130,7 @@ export class ChannelsGateway implements OnGatewayConnection {
     @ConnectedSocket() socket: Socket,
   ) {
     const { id, kind, value } = toggleTrackDto;
-    console.log(id, kind, value, 'userTrackToggle', socket.id);
+    // console.log(id, kind, value, 'userTrackToggle', socket.id);
     const usersInChannel = this.users[id];
     if (!usersInChannel) {
       return;
@@ -218,19 +218,20 @@ export class ChannelsGateway implements OnGatewayConnection {
 
     if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}`)) {
       console.log(socket.id, 'user might have been here before 222222');
-      if (this.users[id]) {
-        const userList = this.users[id].filter((record) => {
-          console.log(record.user.id === user.id && record.pid !== socket.id);
-          if (record.user.id === user.id && record.pid !== socket.id) {
-            this.disconnect(record.pid);
-          }
-          // todo same user but different socketId
-          return !(record.user.id === user.id && record.pid !== socket.id);
-        });
-        this.users[id] = userList;
-      }
-      console.log('emit user list ');
+      // if (this.users[id]) {
+      //   const userList = this.users[id].filter((record) => {
+      //     console.log(record.user.id === user.id && record.pid !== socket.id);
+      //     if (record.user.id === user.id && record.pid !== socket.id) {
+      //       this.disconnect(record.pid);
+      //     }
+      //     // todo same user but different socketId
+      //     return !(record.user.id === user.id && record.pid !== socket.id);
+      //   });
+      //   this.users[id] = userList;
+      // }
+      // console.log('emit user list ');
       this.server.to(`${socket.id}`).emit(`RELOAD_PAGE`, { reload: true });
+      return;
     }
     deleteSocketRooms(socket, 'CHANNEL_VOICE');
 
@@ -298,6 +299,12 @@ export class ChannelsGateway implements OnGatewayConnection {
     });
   }
 
+  @SubscribeMessage('disconnectVoice')
+  disconnectVoice(socket: Socket) {
+    deleteSocketRooms(socket, 'CHANNEL_VOICE');
+    this.disconnect(socket.id);
+  }
+
   disconnect(pid: string) {
     const channelId = this.socketToRoom[pid];
     if (!channelId) {
@@ -311,7 +318,6 @@ export class ChannelsGateway implements OnGatewayConnection {
     this.users[channelId] = usersInChannel.filter(
       (userRecord: UserRecord) => userRecord.pid !== pid,
     );
-    // deleteSocketRooms(socket, 'CHANNEL_VOICE');
     this.server
       .to(`CHANNEL_VOICE_${channelId}`)
       .emit(`USER_DISCONNECTED`, { pid });
