@@ -26,7 +26,6 @@ export class AuthController {
     try {
       return await this.authService.login(loginDto);
     } catch (err) {
-      console.log('catachingasdasd');
       httpError(err.message);
     }
   }

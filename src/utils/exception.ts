@@ -23,7 +23,6 @@ export const wsError = (message: string) => {
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
-    console.log('hello');
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
@@ -48,7 +47,6 @@ export class WebsocketExceptionsFilter extends BaseWsExceptionFilter {
     // exception instanceof WsException
     //   ? exception.getError()
     //   : exception.getResponse();
-    console.log(error);
     const details = error instanceof Object ? { ...error } : { message: error };
     client.send(
       JSON.stringify({

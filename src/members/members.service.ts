@@ -122,7 +122,6 @@ export class MembersService {
 
   async canUserKickMember(user: User, memberId: number) {
     const member = await this.findOne(memberId);
-    console.log(user.id, member, memberId);
     if (!member) {
       return false;
     }

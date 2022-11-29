@@ -67,10 +67,7 @@ export class MembersGateway {
       return;
     }
     const memberLeave = await this.membersService.memberLeaveGroup(id);
-    console.log(memberLeave);
     const group = await this.membersService.findGroupByMemberId(memberLeave.id);
-    console.log(group);
-
     this.server
       .to(`GROUP_ACTIVE_${memberLeave.groupId}`)
       .emit('MEMBER_LEAVE', memberLeave);
