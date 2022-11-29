@@ -24,7 +24,6 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     try {
-      console.log('lmao');
       return await this.authService.login(loginDto);
     } catch (err) {
       console.log('catachingasdasd');
