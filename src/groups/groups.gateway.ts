@@ -14,7 +14,7 @@ import {
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { Socket, Server } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
-import { serverError } from '../utils/exception';
+import { throwErr, wsError } from '../utils/exception';
 import { User } from '@prisma/client';
 import { checkHasSocketRoom, deleteSocketRooms } from '../utils/socketUtil';
 
@@ -42,19 +42,23 @@ export class GroupsGateway {
     @MessageBody() id: number,
     @ConnectedSocket() socket: Socket,
   ) {
-    if (checkHasSocketRoom(socket, `GROUP_ACTIVE_${id}`)) {
-      return;
+    try {
+      if (checkHasSocketRoom(socket, `GROUP_ACTIVE_${id}`)) {
+        return;
+      }
+      const user = await this.authService.getUserFromToken(
+        socket.handshake.auth.token,
+      );
+      const group = await this.groupsService.findOne(id);
+      if (!group) {
+        throwErr(`Can not find group`);
+      }
+      deleteSocketRooms(socket, 'GROUP_ACTIVE');
+      await socket.join(`GROUP_ACTIVE_${group.id}`);
+      // return this.server.to(`${user.id}`).emit('JOIN_GROUP_READY');
+    } catch (err) {
+      wsError(err.message);
     }
-    const user = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
-    const group = await this.groupsService.findOne(id);
-    if (!group) {
-      serverError(`Can not find group`);
-    }
-    deleteSocketRooms(socket, 'GROUP_ACTIVE');
-    await socket.join(`GROUP_ACTIVE_${group.id}`);
-    // return this.server.to(`${user.id}`).emit('JOIN_GROUP_READY');
   }
 
   @SubscribeMessage('createGroup')
@@ -62,24 +66,15 @@ export class GroupsGateway {
     @MessageBody() createGroupDto: CreateGroupDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const user = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
-    const group = await this.groupsService.create(user, createGroupDto);
-    return this.server.to(`${user.id}`).emit('GROUP_CREATED', group);
-  }
-
-  @SubscribeMessage('findAllGroups')
-  async findAll(@ConnectedSocket() socket: Socket) {
-    const user = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
-    return this.groupsService.findAll(user.id);
-  }
-
-  @SubscribeMessage('findOneGroup')
-  findOne(@MessageBody() id: number) {
-    return this.groupsService.findOne(id);
+    try {
+      const user = await this.authService.getUserFromToken(
+        socket.handshake.auth.token,
+      );
+      const group = await this.groupsService.create(user, createGroupDto);
+      return this.server.to(`${user.id}`).emit('GROUP_CREATED', group);
+    } catch (err) {
+      wsError(err.message);
+    }
   }
 
   @SubscribeMessage('updateGroup')
@@ -98,16 +93,20 @@ export class GroupsGateway {
     @MessageBody() data: JoinGroupByinviteTokenProps,
     @ConnectedSocket() socket: Socket,
   ) {
-    const user = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
-    const group = await this.groupsService.joinGroupByInviteToken(
-      user,
-      data.token,
-    );
-    // todo add event member add
-    // this.server.to(`${group.id}`).emit('MEMBER_ADD', group);
-    return this.server.to(`${user.id}`).emit('GROUP_CREATED', group);
+    try {
+      const user = await this.authService.getUserFromToken(
+        socket.handshake.auth.token,
+      );
+      const group = await this.groupsService.joinGroupByInviteToken(
+        user,
+        data.token,
+      );
+      // todo add event member add
+      // this.server.to(`${group.id}`).emit('MEMBER_ADD', group);
+      return this.server.to(`${user.id}`).emit('GROUP_CREATED', group);
+    } catch (err) {
+      wsError(err.message);
+    }
   }
 
   @SubscribeMessage('typing')

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { Friendship, GroupType, User } from '@prisma/client';
+import { GroupType, User } from '@prisma/client';
 import { GroupsService } from '../groups/groups.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
-import { serverError } from '../utils/exception';
+import { throwErr } from '../utils/exception';
 import { FriendshipEnum } from '../utils/type';
 import { CreateFriendDto } from './dto/create-friend.dto';
 import { UpdateFriendDto } from './dto/update-friend.dto';
@@ -22,7 +22,10 @@ export class FriendsService {
 
     const friend = await this.usersService.findOneByEmail(email);
     if (!friend) {
-      serverError(`Can not send friend request`);
+      throwErr(`Can not send friend request`);
+    }
+    if (user.email === email) {
+      throwErr(`Can not send request to yourself`);
     }
     const friendId = friend.id;
     let userSendRequest: any;
@@ -41,7 +44,7 @@ export class FriendsService {
       checkExisted.type !== FriendshipEnum.CANCEL &&
       checkExisted.type !== FriendshipEnum.BLOCK
     ) {
-      serverError(`Can not send friend request`);
+      throwErr(`Can not send friend request`);
     }
 
     if (
@@ -80,14 +83,14 @@ export class FriendsService {
       where: { id, type: { not: FriendshipEnum.FRIEND } },
     });
     if (user.id !== friendship.userId) {
-      serverError(`No authority`);
+      throwErr(`No authority`);
     }
     const friendshipInvert = await this.findOneByUserIdAndFriendId(
       friendship.friendId,
       friendship.userId,
     );
     if (!friendshipInvert) {
-      serverError(`No friend data found`);
+      throwErr(`No friend data found`);
     }
     const userSendRequest = await this.update(id, {
       type: FriendshipEnum.FRIEND,
@@ -109,17 +112,17 @@ export class FriendsService {
     const { id } = updateFriendDto;
     const friendship = await this.findOne(id);
     if (!friendship) {
-      serverError(`No friend data found`);
+      throwErr(`No friend data found`);
     }
     if (user.id !== friendship.userId && user.id !== friendship.friendId) {
-      serverError(`No authority`);
+      throwErr(`No authority`);
     }
     const friendshipInvert = await this.findOneByUserIdAndFriendId(
       friendship.friendId,
       friendship.userId,
     );
     if (!friendshipInvert) {
-      serverError(`No friend data found`);
+      throwErr(`No friend data found`);
     }
     const userSendRequest = await this.update(id, {
       type: FriendshipEnum.CANCEL,

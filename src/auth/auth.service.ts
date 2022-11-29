@@ -5,7 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { User } from '@prisma/client';
-import { serverError } from '../utils/exception';
+import { throwErr } from '../utils/exception';
 import { Socket } from 'socket.io';
 
 @Injectable()
@@ -30,10 +30,10 @@ export class AuthService {
     const { email, password } = loginDto;
     const user = await this.usersService.findOneByEmail(email);
     if (!user) {
-      serverError(`Email or password wrong`);
+      throwErr(`Email or password wrong`);
     }
     if (!(await this.comparePassword(password, user.password))) {
-      serverError(`Email or password wrong`);
+      throwErr(`Email or password wrong`);
     }
     const result = await this.generateToken(user);
     return {
@@ -45,7 +45,7 @@ export class AuthService {
     const { email, password } = registerDto;
     const existed = await this.usersService.findOneByEmail(email);
     if (existed) {
-      serverError(`Email duplicate`);
+      throwErr(`Email duplicate`);
     }
     registerDto.password = await this.hashPassword(password);
     const user = await this.usersService.create(registerDto);

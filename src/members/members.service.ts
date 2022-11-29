@@ -3,7 +3,7 @@ import { GroupType, MemberStatus, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RolesOnMembersService } from '../roles-on-members/roles-on-members.service';
 import { RolesService } from '../roles/roles.service';
-import { serverError } from '../utils/exception';
+import { throwErr } from '../utils/exception';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { MemberQueryDto } from './dto/member-query.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
@@ -28,7 +28,7 @@ export class MembersService {
       if (member.status !== MemberStatus.IN) {
         return await this.update(member.id, { status: MemberStatus.IN });
       } else {
-        serverError('User already member');
+        throwErr('User already member');
       }
     }
   }

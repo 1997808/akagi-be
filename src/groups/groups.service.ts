@@ -6,7 +6,7 @@ import { MembersService } from '../members/members.service';
 import { PrismaService } from '../prisma/prisma.service';
 // import { RolesOnMembersService } from '../roles-on-members/roles-on-members.service';
 import { RolesService } from '../roles/roles.service';
-import { serverError } from '../utils/exception';
+import { throwErr } from '../utils/exception';
 import {
   CreateDirectGroupDto,
   CreateGroupDto,
@@ -135,7 +135,7 @@ export class GroupsService {
       groupId,
     );
     if (!member) {
-      serverError('User not member');
+      throwErr('User not member');
     }
 
     const invites = await this.invitesService.findAvailableByGroupId(groupId);

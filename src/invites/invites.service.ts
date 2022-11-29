@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { serverError } from '../utils/exception';
+import { throwErr } from '../utils/exception';
 import { getRandomToken } from '../utils/getRandomToken';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { UpdateInviteDto } from './dto/update-invite.dto';
@@ -50,7 +50,7 @@ export class InvitesService {
       where: { token, uses: { gt: 0 } },
     });
     if (invite.uses < 1) {
-      serverError('Invite token is expire');
+      throwErr('Invite token is expire');
     }
     return invite;
   }

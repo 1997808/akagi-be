@@ -11,7 +11,7 @@ import { Socket, Server } from 'socket.io';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
 import { AuthService } from '../auth/auth.service';
-import { serverError } from '../utils/exception';
+import { throwErr, wsError } from '../utils/exception';
 import {
   DisplayMediaDto,
   JoinActiveChannelDto,
@@ -71,16 +71,6 @@ export class ChannelsGateway implements OnGatewayConnection {
       .emit('CHANNEL_CREATED', channels);
   }
 
-  @SubscribeMessage('findAllChannels')
-  findAll() {
-    return this.channelsService.findAll();
-  }
-
-  @SubscribeMessage('findOneChannel')
-  findOne(@MessageBody() id: number) {
-    return this.channelsService.findOne(id);
-  }
-
   @SubscribeMessage('updateChannel')
   update(@MessageBody() updateChannelDto: UpdateChannelDto) {
     return this.channelsService.update(updateChannelDto.id, updateChannelDto);
@@ -96,20 +86,24 @@ export class ChannelsGateway implements OnGatewayConnection {
     @MessageBody() joinActiveChannelDto: JoinActiveChannelDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { id } = joinActiveChannelDto;
-    if (checkHasSocketRoom(socket, `CHANNEL_ACTIVE_${id}`)) {
-      return;
+    try {
+      const { id } = joinActiveChannelDto;
+      if (checkHasSocketRoom(socket, `CHANNEL_ACTIVE_${id}`)) {
+        return;
+      }
+      const user = await this.authService.getUserFromToken(
+        socket.handshake.auth.token,
+      );
+      const channel = await this.channelsService.findOne(id);
+      if (!channel) {
+        throwErr(`Can not find channel`);
+      }
+      deleteSocketRooms(socket, 'CHANNEL_ACTIVE');
+      await socket.join(`CHANNEL_ACTIVE_${channel.id}`);
+      // return this.server.to(`${user.id}`).emit('JOIN_CHANNEL');
+    } catch (err) {
+      wsError(err.message);
     }
-    const user = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
-    const channel = await this.channelsService.findOne(id);
-    if (!channel) {
-      serverError(`Can not find channel`);
-    }
-    deleteSocketRooms(socket, 'CHANNEL_ACTIVE');
-    await socket.join(`CHANNEL_ACTIVE_${channel.id}`);
-    // return this.server.to(`${user.id}`).emit('JOIN_CHANNEL');
   }
 
   @SubscribeMessage('displayMedia')
@@ -172,20 +166,24 @@ export class ChannelsGateway implements OnGatewayConnection {
     @MessageBody() joinVoiceChannelDto: JoinVoiceChannelDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { id } = joinVoiceChannelDto;
+    try {
+      const { id } = joinVoiceChannelDto;
 
-    const channel = await this.channelsService.findOne(id);
-    if (!channel) {
-      serverError(`Can not find channel`);
+      const channel = await this.channelsService.findOne(id);
+      if (!channel) {
+        throwErr(`Can not find channel`);
+      }
+      if (channel.type !== ChannelType.VOICE) {
+        throwErr(`Can not find channel`);
+      }
+      if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}`)) {
+        return;
+      }
+      deleteSocketRooms(socket, 'CHANNEL_ACTIVE');
+      await socket.join(`${socket.id}`);
+    } catch (err) {
+      wsError(err.message);
     }
-    if (channel.type !== ChannelType.VOICE) {
-      serverError(`Can not find channel`);
-    }
-    if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}`)) {
-      return;
-    }
-    deleteSocketRooms(socket, 'CHANNEL_ACTIVE');
-    await socket.join(`${socket.id}`);
   }
 
   @SubscribeMessage('joinVoiceChannelPeer')
@@ -193,70 +191,76 @@ export class ChannelsGateway implements OnGatewayConnection {
     @MessageBody() joinVoiceDto: JoinVoiceDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { id, audio, video } = joinVoiceDto;
-    const user = await this.authService.getUserFromToken(
-      socket.handshake.auth.token,
-    );
-    const channel = await this.channelsService.findOne(id);
-    if (!channel) {
-      serverError(`Can not find channel`);
-    }
-    if (channel.type !== ChannelType.VOICE) {
-      serverError(`Can not find channel`);
-    }
-
-    this.logger.log(`client connect ${socket.id} channel ${channel.id}`);
-    socket.rooms.forEach((item: string) => {
-      // check if user join voice channel but still joining some voice channel before
-      if (item.includes('CHANNEL_VOICE') && item !== `CHANNEL_VOICE_${id}`) {
-        deleteSocketRooms(socket, item);
-        console.log('disconnect', socket.id, ' from ', item);
-        this.disconnect(socket.id);
-        this.server.to(`${socket.id}`).emit(`RELOAD_PAGE`, { reload: true });
-      }
-    });
-
-    if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}`)) {
-      console.log(socket.id, 'user might have been here before 222222');
-      // if (this.users[id]) {
-      //   const userList = this.users[id].filter((record) => {
-      //     console.log(record.user.id === user.id && record.pid !== socket.id);
-      //     if (record.user.id === user.id && record.pid !== socket.id) {
-      //       this.disconnect(record.pid);
-      //     }
-      //     // todo same user but different socketId
-      //     return !(record.user.id === user.id && record.pid !== socket.id);
-      //   });
-      //   this.users[id] = userList;
-      // }
-      // console.log('emit user list ');
-      this.server.to(`${socket.id}`).emit(`RELOAD_PAGE`, { reload: true });
-      return;
-    }
-    deleteSocketRooms(socket, 'CHANNEL_VOICE');
-
-    if (this.users[id]) {
-      const index = this.users[id].findIndex(
-        (record) => record.pid === socket.id,
+    try {
+      const { id, audio, video } = joinVoiceDto;
+      const user = await this.authService.getUserFromToken(
+        socket.handshake.auth.token,
       );
-      if (index > -1) {
-        // if this socket has join
+      const channel = await this.channelsService.findOne(id);
+      if (!channel) {
+        throwErr(`Can not find channel`);
+      }
+      if (channel.type !== ChannelType.VOICE) {
+        throwErr(`Can not find channel`);
+      }
+
+      this.logger.log(`client connect ${socket.id} channel ${channel.id}`);
+      socket.rooms.forEach((item: string) => {
+        // check if user join voice channel but still joining some voice channel before
+        if (item.includes('CHANNEL_VOICE') && item !== `CHANNEL_VOICE_${id}`) {
+          deleteSocketRooms(socket, item);
+          console.log('disconnect', socket.id, ' from ', item);
+          this.disconnect(socket.id);
+          this.server.to(`${socket.id}`).emit(`RELOAD_PAGE`, { reload: true });
+        }
+      });
+
+      if (checkHasSocketRoom(socket, `CHANNEL_VOICE_${id}`)) {
+        console.log(socket.id, 'user might have been here before 222222');
+        // if (this.users[id]) {
+        //   const userList = this.users[id].filter((record) => {
+        //     console.log(record.user.id === user.id && record.pid !== socket.id);
+        //     if (record.user.id === user.id && record.pid !== socket.id) {
+        //       this.disconnect(record.pid);
+        //     }
+        //     // todo same user but different socketId
+        //     return !(record.user.id === user.id && record.pid !== socket.id);
+        //   });
+        //   this.users[id] = userList;
+        // }
+        // console.log('emit user list ');
+        this.server.to(`${socket.id}`).emit(`RELOAD_PAGE`, { reload: true });
         return;
       }
+      deleteSocketRooms(socket, 'CHANNEL_VOICE');
 
-      this.users[id].push({ pid: socket.id, user, audio, video });
-    } else {
-      this.users[id] = [{ pid: socket.id, user, audio, video }];
+      if (this.users[id]) {
+        const index = this.users[id].findIndex(
+          (record) => record.pid === socket.id,
+        );
+        if (index > -1) {
+          // if this socket has join
+          return;
+        }
+
+        this.users[id].push({ pid: socket.id, user, audio, video });
+      } else {
+        this.users[id] = [{ pid: socket.id, user, audio, video }];
+      }
+      this.socketToRoom[socket.id] = id;
+      const usersInThisRoom = this.users[id].filter(
+        (userRecord: UserRecord) => {
+          return userRecord.pid !== socket.id;
+        },
+      );
+      await socket.join(`CHANNEL_VOICE_${channel.id}`);
+
+      return this.server
+        .to(`${socket.id}`)
+        .emit(`ALL_USERS`, { users: usersInThisRoom });
+    } catch (err) {
+      wsError(err.message);
     }
-    this.socketToRoom[socket.id] = id;
-    const usersInThisRoom = this.users[id].filter((userRecord: UserRecord) => {
-      return userRecord.pid !== socket.id;
-    });
-    await socket.join(`CHANNEL_VOICE_${channel.id}`);
-
-    return this.server
-      .to(`${socket.id}`)
-      .emit(`ALL_USERS`, { users: usersInThisRoom });
   }
 
   @SubscribeMessage('sendingSignal')

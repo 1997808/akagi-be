@@ -3,7 +3,10 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as event from 'events';
-import { HttpExceptionFilter } from './utils/exception';
+import {
+  HttpExceptionFilter,
+  WebsocketExceptionsFilter,
+} from './utils/exception';
 // import * as fs from 'fs';
 // import * as path from 'path';
 
@@ -36,7 +39,10 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(
+    new HttpExceptionFilter(),
+    new WebsocketExceptionsFilter(),
+  );
 
   await app.listen(3000, '0.0.0.0');
 }
