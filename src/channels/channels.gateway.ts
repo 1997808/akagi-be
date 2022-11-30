@@ -271,10 +271,11 @@ export class ChannelsGateway implements OnGatewayConnection {
     const { userToSignal, signal, callerID, user, audio, video } = payload;
     console.log(
       callerID,
+      signal.type,
       ' me here sending signal to',
       userToSignal,
-      audio,
       video,
+      audio,
     );
     return socket
       .to(`${userToSignal}`)
@@ -289,10 +290,11 @@ export class ChannelsGateway implements OnGatewayConnection {
     const { signal, callerID, user, audio, video } = payload;
     console.log(
       socket.id,
+      signal.type,
       ' accept and return signal to',
       callerID,
-      audio,
       video,
+      audio,
     );
     return this.server.to(`${callerID}`).emit(`RECEIVE_RETURN_SIGNAL`, {
       signal,

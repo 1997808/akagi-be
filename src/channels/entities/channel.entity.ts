@@ -98,7 +98,7 @@ export class SendingSignalDto {
 
   @ApiProperty()
   @IsNotEmpty()
-  signal: string | Peer.SignalData;
+  signal: Peer.SignalData;
 
   @ApiProperty()
   @IsNotEmpty()
