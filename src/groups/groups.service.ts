@@ -103,6 +103,7 @@ export class GroupsService {
   async findAllPublic() {
     return await this.prisma.group.findMany({
       where: { isPublic: true },
+      include: { members: { select: { id: true } } },
     });
   }
 
@@ -181,6 +182,14 @@ export class GroupsService {
     }
     await this.membersService.userJoinGroup(user, id);
     return await this.findOne(id);
+  }
+
+  async updateGroupMemberCount(id: number, value: number) {
+    const group = await this.findOneSimple(id);
+    return await this.prisma.group.update({
+      where: { id },
+      data: { memberCount: group.memberCount + value },
+    });
   }
 
   async handleUserTyping(

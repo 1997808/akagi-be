@@ -27,5 +27,8 @@ export class GroupEntity implements Group {
   memberOwnerId: number;
 
   @ApiProperty()
+  memberCount: number;
+
+  @ApiProperty()
   createdAt: Date;
 }

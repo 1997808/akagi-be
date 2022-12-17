@@ -9,6 +9,7 @@ import { AuthModule } from '../auth/auth.module';
 import { RolesModule } from '../roles/roles.module';
 import { RolesOnMembersModule } from '../roles-on-members/roles-on-members.module';
 import { InvitesModule } from '../invites/invites.module';
+import { GroupsListener } from './groups.event';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { InvitesModule } from '../invites/invites.module';
     InvitesModule,
   ],
   controllers: [GroupsController],
-  providers: [GroupsGateway, GroupsService],
+  providers: [GroupsGateway, GroupsService, GroupsListener],
   exports: [GroupsService],
 })
 export class GroupsModule {}

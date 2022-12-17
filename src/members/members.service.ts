@@ -7,10 +7,12 @@ import { throwErr } from '../utils/exception';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { MemberQueryDto } from './dto/member-query.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class MembersService {
   constructor(
+    private eventEmitter: EventEmitter2,
     private prisma: PrismaService,
     private rolesService: RolesService,
     private rolesOnMembersService: RolesOnMembersService,
@@ -89,6 +91,7 @@ export class MembersService {
       memberId: member.id,
       roleId: role.id,
     });
+    this.eventEmitter.emit('member.join', { id: groupId, memberCount: 1 });
 
     return member;
   }
@@ -146,6 +149,10 @@ export class MembersService {
   async memberLeaveGroup(id: number) {
     const member = await this.update(id, { status: MemberStatus.OUT });
     await this.rolesOnMembersService.removeAllRoleFromMember(id);
+    this.eventEmitter.emit('member.join', {
+      id: member.groupId,
+      memberCount: -1,
+    });
     return member;
   }
 }

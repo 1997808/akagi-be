@@ -29,4 +29,8 @@ export class UpdateGroupDto {
   @ApiProperty()
   @IsOptional()
   memberOwnerId?: number;
+
+  @ApiProperty()
+  @IsOptional()
+  memberCount?: number;
 }
