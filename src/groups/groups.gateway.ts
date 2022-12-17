@@ -9,6 +9,7 @@ import { GroupsService } from './groups.service';
 import {
   CreateGroupDto,
   JoinGroupByinviteTokenProps,
+  JoinPublicGroupProps,
   UserTypingProps,
 } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -101,6 +102,24 @@ export class GroupsGateway {
         user,
         data.token,
       );
+      // todo add event member add
+      // this.server.to(`${group.id}`).emit('MEMBER_ADD', group);
+      return this.server.to(`${user.id}`).emit('GROUP_CREATED', group);
+    } catch (err) {
+      wsError(err.message);
+    }
+  }
+
+  @SubscribeMessage('joinPublicGroup')
+  async joinPublicGroup(
+    @MessageBody() data: JoinPublicGroupProps,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    try {
+      const user = await this.authService.getUserFromToken(
+        socket.handshake.auth.token,
+      );
+      const group = await this.groupsService.joinPublicGroup(user, data.id);
       // todo add event member add
       // this.server.to(`${group.id}`).emit('MEMBER_ADD', group);
       return this.server.to(`${user.id}`).emit('GROUP_CREATED', group);

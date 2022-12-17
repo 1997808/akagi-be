@@ -36,6 +36,12 @@ export class JoinGroupByinviteTokenProps {
   token!: string;
 }
 
+export class JoinPublicGroupProps {
+  @ApiProperty()
+  @IsNotEmpty()
+  id!: number;
+}
+
 export class UserTypingProps {
   @ApiProperty()
   @IsNotEmpty()

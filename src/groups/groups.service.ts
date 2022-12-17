@@ -100,6 +100,12 @@ export class GroupsService {
     });
   }
 
+  async findAllPublic() {
+    return await this.prisma.group.findMany({
+      where: { isPublic: true },
+    });
+  }
+
   async findOneForDirect(id: number) {
     return await this.prisma.group.findUnique({
       where: { id },
@@ -163,6 +169,18 @@ export class GroupsService {
     await this.membersService.userJoinGroup(user, invite.groupId);
     await this.invitesService.minusOneInviteUses(invite.id);
     return await this.findOne(invite.groupId);
+  }
+
+  async joinPublicGroup(user: User, id: number) {
+    const group = await this.findOneSimple(id);
+    if (!group) {
+      throwErr('Group not found');
+    }
+    if (!group.isPublic) {
+      throwErr('Not a public group');
+    }
+    await this.membersService.userJoinGroup(user, id);
+    return await this.findOne(id);
   }
 
   async handleUserTyping(

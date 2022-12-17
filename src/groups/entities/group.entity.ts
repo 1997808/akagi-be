@@ -9,7 +9,13 @@ export class GroupEntity implements Group {
   name: string;
 
   @ApiProperty()
+  description: string;
+
+  @ApiProperty()
   iconURL: string;
+
+  @ApiProperty()
+  bannerURL: string;
 
   @ApiProperty()
   type: GroupType;

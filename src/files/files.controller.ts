@@ -40,6 +40,21 @@ export class FilesController {
     return result.public_id;
   }
 
+  @Post('group/banner/:id')
+  @UseInterceptors(FileInterceptor('image'))
+  async uploadGroupBanner(
+    @AuthUser() user: User,
+    @UploadedFile(SharpPipe) image: Buffer,
+    @Param('id') id: string,
+  ) {
+    const result = await this.filesService.uploadBufferImage(image);
+    await this.groupsService.update(+id, {
+      id: +id,
+      bannerURL: result.public_id,
+    });
+    return result.public_id;
+  }
+
   @Post('group/icon/:id')
   @UseInterceptors(FileInterceptor('icon'))
   async uploadGroupIcon(

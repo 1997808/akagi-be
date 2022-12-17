@@ -38,7 +38,9 @@ model Friendship {
 model Group {
   id            Int       @id @default(autoincrement())
   name          String?   @default("Default")
+  description   String?   @default("A public group open for anyone")
   iconURL       String?
+  bannerURL     String?
   type          GroupType @default(GROUP)
   isPublic      Boolean   @default(false)
   memberOwnerId Int?      @unique

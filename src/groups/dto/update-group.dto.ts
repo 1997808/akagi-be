@@ -12,7 +12,15 @@ export class UpdateGroupDto {
 
   @ApiProperty()
   @IsOptional()
+  description?: string;
+
+  @ApiProperty()
+  @IsOptional()
   iconURL?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  bannerURL?: string;
 
   @ApiProperty()
   @IsOptional()

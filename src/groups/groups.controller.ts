@@ -32,6 +32,11 @@ export class GroupsController {
     return await this.groupsService.findAllDirect(user.id);
   }
 
+  @Get('public')
+  async findAllPublicGroup(@AuthUser() user: User) {
+    return await this.groupsService.findAllPublic();
+  }
+
   @Get(':id')
   async findGroupById(@AuthUser() user: User, @Param('id') id: string) {
     return await this.groupsService.findOne(+id);
