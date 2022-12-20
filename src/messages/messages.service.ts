@@ -62,6 +62,7 @@ export class MessagesService {
       include: {
         member: {
           select: {
+            id: true,
             user: {
               select: {
                 id: true,

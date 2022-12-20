@@ -17,6 +17,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { PinMessagesModule } from './pin-messages/pin-messages.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ReactionsModule } from './reactions/reactions.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     RolesOnMembersModule,
     FilesModule,
     PinMessagesModule,
+    ReactionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
