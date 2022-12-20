@@ -23,16 +23,55 @@ export class ReactionsGateway {
     @MessageBody() createReactionDto: CreateReactionDto,
     @ConnectedSocket() socket: Socket,
   ) {
+    const { emoji, unified, messageId, channelId } = createReactionDto;
     const user = await this.authService.getUserFromToken(
       socket.handshake.auth.token,
     );
     const reaction = await this.reactionsService.findOneDuplicate(
       createReactionDto,
     );
+    const result = await this.reactionsService.countReactions(
+      messageId,
+      unified,
+    );
     if (reaction) {
-      return this.reactionsService.remove(reaction.id);
+      await this.reactionsService.remove(reaction.id);
+      if (result > 1) {
+        return this.server
+          .to(`CHANNEL_ACTIVE_${channelId}`)
+          .emit('MESSAGE_REACTED', {
+            messageId,
+            new: false,
+            data: {
+              emoji,
+              unified,
+              _count: { _all: result - 1, emoji: result - 1 },
+            },
+          });
+      } else {
+        return this.server
+          .to(`CHANNEL_ACTIVE_${channelId}`)
+          .emit('MESSAGE_REMOVE_REACTED', {
+            messageId,
+            data: {
+              emoji,
+              unified,
+            },
+          });
+      }
     }
-    return this.reactionsService.create(createReactionDto);
+    await this.reactionsService.create(createReactionDto);
+    return this.server
+      .to(`CHANNEL_ACTIVE_${channelId}`)
+      .emit('MESSAGE_REACTED', {
+        messageId,
+        new: !(result > 0),
+        data: {
+          emoji,
+          unified,
+          _count: { _all: result + 1, emoji: result + 1 },
+        },
+      });
   }
 
   @SubscribeMessage('findOneReaction')
@@ -51,3 +90,14 @@ export class ReactionsGateway {
     return this.reactionsService.remove(id);
   }
 }
+
+// interface ReactionProps {
+//   emoji: string;
+//   unified: string;
+//   _count: ReactionCountProps;
+// }
+
+// interface ReactionCountProps {
+//   _all: number;
+//   emoji: number;
+// }

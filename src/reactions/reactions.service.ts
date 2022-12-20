@@ -42,6 +42,13 @@ export class ReactionsService {
     return result;
   }
 
+  async countReactions(messageId: number, unified: string) {
+    const result = await this.prisma.reaction.count({
+      where: { messageId, unified },
+    });
+    return result;
+  }
+
   async findOne(id: number) {
     return await this.prisma.reaction.findUnique({ where: { id } });
   }

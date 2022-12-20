@@ -17,4 +17,8 @@ export class CreateReactionDto {
   @ApiProperty()
   @IsNotEmpty()
   messageId: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  channelId: number;
 }
