@@ -18,9 +18,14 @@ import { memoryStorage } from 'multer';
 import { PinMessagesModule } from './pin-messages/pin-messages.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ReactionsModule } from './reactions/reactions.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      envFilePath: ['.env'],
+      isGlobal: true,
+    }),
     MulterModule.register({
       storage: memoryStorage(),
     }),
